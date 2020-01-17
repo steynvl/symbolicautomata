@@ -200,10 +200,10 @@ public class RunLTLExp {
 
 								BooleanExpressionFactory<PositiveBooleanExpression> boolexpr = SAFA
 										.getBooleanExpressionFactory();
-								safa2 = SAFA.MkSAFA(safa1.getInputMoves(),
+								safa2 = SAFA.MkSAFA(safa1.getMoves(),
 										boolexpr.MkAnd(safa1.getInitialState(),
 												boolexpr.MkState(states.get(r.nextInt(states.size())))),
-										safa1.getFinalStates(), bdds);
+										safa1.getFinalStates(), new ArrayList<>(), bdds);
 
 								fw.append(pair.second.getSize() + ", ");
 

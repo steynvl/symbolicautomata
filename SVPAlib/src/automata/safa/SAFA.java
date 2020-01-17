@@ -6,17 +6,7 @@
  */
 package automata.safa;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Triple;
@@ -216,6 +206,170 @@ public class SAFA<P, S> {
 				getEpsilonTo(to).add((SAFAEpsilon<P, S>) transition);
 			}
 		}
+	}
+
+	/**
+	 * Computes the union of <code>aut1</code> and <code>aut2</code> as a new
+	 * SAFA
+	 *
+	 * @throws TimeoutException
+	 */
+	public static <A, B> SAFA<A, B> union(SAFA<A, B> aut1,
+										  SAFA<A, B> aut2,
+										  BooleanAlgebra<A, B> ba) throws TimeoutException {
+		BooleanExpressionFactory<PositiveBooleanExpression> boolExpr = SAFA.getBooleanExpressionFactory();
+		// if (aut1.isEmpty && aut2.isEmpty) TODO
+		// return getEmptySAFA(ba); TODO
+
+		// components of new SAFA
+		Collection<SAFAMove<A, B>> transitions = new ArrayList<>();
+		Integer initialState;
+		Collection<Integer> finalStates = new HashSet<>();
+		Collection<Integer> lookaheadFinalStates = new HashSet<>();
+
+		// Offset will be add to all states of aut2
+		// to ensure that the states of aut1 and aut2 are disjoint
+		int offSet = aut1.maxStateId + 2;
+
+		// Copy the moves of aut1 in transitions
+		for (SAFAMove<A, B> t : aut1.getTransitions()) {
+			@SuppressWarnings("unchecked")
+			SAFAMove<A, B> newMove = (SAFAMove<A, B>) t.clone();
+			transitions.add(newMove);
+		}
+
+		// Copy the moves of aut2 in transitions
+		// and shift the states by offset
+		for (SAFAMove<A, B> t : aut2.getTransitions()) {
+			@SuppressWarnings("unchecked")
+			SAFAMove<A, B> newMove = (SAFAMove<A, B>) t.clone();
+
+			newMove.from += offSet;
+
+			if (newMove.to.getStates().size() == 1) {
+				newMove.to = boolExpr.MkState(newMove.to.getStates().iterator().next() + offSet);
+			} else {
+				Iterator<Integer> it = newMove.to.getStates().iterator();
+				BooleanExpressionFactory<PositiveBooleanExpression> p = SAFA.getBooleanExpressionFactory();
+				newMove.to = p.MkAnd(
+						p.MkState(it.next() + offSet),
+						p.MkState(it.next() + offSet)
+				);
+			}
+
+			transitions.add(newMove);
+		}
+
+		// the new initial state is the first available id
+		initialState = aut2.maxStateId + offSet + 1;
+
+		// Add transitions from new initial state to
+		// the the initial state of aut1 and
+		// the initial state of aut2 shifted by offset
+		PositiveBooleanExpression to1, to2;
+		BooleanExpressionFactory<PositiveBooleanExpression> pb = SAFA.getBooleanExpressionFactory();
+
+		if (aut1.initialState.getStates().size() == 2) {
+			Iterator<Integer> it = aut1.initialState.getStates().iterator();
+			to1 = pb.MkAnd(pb.MkState(it.next()), pb.MkState(it.next()));
+		} else {
+			to1 = pb.MkState(aut1.initialState.getStates().iterator().next());
+		}
+
+		if (aut2.initialState.getStates().size() == 2) {
+			Iterator<Integer> it = aut2.initialState.getStates().iterator();
+			to2 = pb.MkAnd(pb.MkState(it.next() + offSet), pb.MkState(it.next() + offSet));
+		} else {
+			to2 = pb.MkState(aut2.initialState.getStates().iterator().next() + offSet);
+		}
+
+		transitions.add(new SAFAEpsilon<>(initialState, to1));
+		transitions.add(new SAFAEpsilon<>(initialState, to2));
+
+		// Make all states of the two machines final
+		finalStates.addAll(aut1.finalStates);
+
+		// make all state of aut2 final after adding the offset
+		for (Integer state : aut2.finalStates)
+			finalStates.add(state + offSet);
+
+		/* do the same for the lookahead final states */
+		lookaheadFinalStates.addAll(aut1.lookaheadFinalStates);
+		for (Integer state : aut2.lookaheadFinalStates)
+			lookaheadFinalStates.add(state + offSet);
+
+		return MkSAFA(
+				transitions, boolExpr.MkState(initialState), finalStates, lookaheadFinalStates, ba
+		);
+	}
+
+	/**
+	 * concatenates aut1 with aut2
+	 *
+	 * @throws TimeoutException
+	 */
+	@SuppressWarnings("unchecked")
+	public static <A, B> SAFA<A, B> concatenate(SAFA<A, B> aut1,
+												SAFA<A, B> aut2,
+												BooleanAlgebra<A, B> ba) throws TimeoutException {
+		// if (aut1.isEmpty || aut2.isEmpty) TODO
+		// return getEmptySAFA(ba); TODO
+
+		if (aut2.getStates().size() == 0) {
+			return aut1;
+		}
+
+		Collection<SAFAMove<A, B>> transitions = new ArrayList<>();
+		PositiveBooleanExpression initialState = aut1.initialState;
+		Collection<Integer> finalStates = new HashSet<>();
+		Collection<Integer> finalLookaheadStates = new HashSet<>();
+
+		int offSet = aut1.maxStateId + 1;
+
+		for (SAFAMove<A, B> t : aut1.getTransitions()) {
+			transitions.add((SAFAMove<A, B>) t.clone());
+		}
+
+		for (SAFAMove<A, B> t : aut2.getTransitions()) {
+			SAFAMove<A, B> newMove = (SAFAMove<A, B>) t.clone();
+
+			newMove.from += offSet;
+
+			if (newMove.to.getStates().size() == 1) {
+				newMove.to = SAFA.getBooleanExpressionFactory().MkState(newMove.to.getStates().iterator().next() + offSet);
+				transitions.add(newMove);
+			} else if (newMove.to.getStates().size() == 2) {
+				Iterator<Integer> it = newMove.to.getStates().iterator();
+				BooleanExpressionFactory<PositiveBooleanExpression> b = SAFA.getBooleanExpressionFactory();
+				newMove.to = b.MkAnd(b.MkState(it.next() + offSet), b.MkState(it.next() + offSet));
+				transitions.add(newMove);
+			}
+		}
+
+		for (Integer state1 : aut1.finalStates) {
+			PositiveBooleanExpression toState = aut2.initialState;
+
+			if (toState.getStates().size() == 1) {
+				toState = SAFA.getBooleanExpressionFactory().MkState(toState.getStates().iterator().next() + offSet);
+				transitions.add(new SAFAEpsilon<>(state1, toState));
+			} else if (toState.getStates().size() == 2) {
+				Iterator<Integer> it = toState.getStates().iterator();
+				BooleanExpressionFactory<PositiveBooleanExpression> b = SAFA.getBooleanExpressionFactory();
+				toState = b.MkAnd(b.MkState(it.next() + offSet), b.MkState(it.next() + offSet));
+				transitions.add(new SAFAEpsilon<>(state1, toState));
+			}
+		}
+
+		for (Integer state : aut2.finalStates) {
+			finalStates.add(state + offSet);
+		}
+
+		finalLookaheadStates.addAll(aut1.lookaheadFinalStates);
+		for (Integer state : aut2.lookaheadFinalStates) {
+			finalLookaheadStates.add(state + offSet);
+		}
+
+		return MkSAFA(transitions, initialState, finalStates, finalLookaheadStates, ba);
 	}
 
 	// ------------------------------------------------------
