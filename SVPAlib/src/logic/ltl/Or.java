@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import automata.safa.SAFAMove;
 import org.sat4j.specs.TimeoutException;
 
 import automata.safa.BooleanExpressionFactory;
@@ -57,7 +58,7 @@ public class Or<P, S> extends LTLFormula<P, S> {
 
 	@Override
 	protected PositiveBooleanExpression accumulateSAFAStatesTransitions(
-			HashMap<LTLFormula<P, S>, PositiveBooleanExpression> formulaToState, Collection<SAFAInputMove<P, S>> moves,
+			HashMap<LTLFormula<P, S>, PositiveBooleanExpression> formulaToState, Collection<SAFAMove<P, S>> moves,
 			Collection<Integer> finalStates, BooleanAlgebra<P, S> ba, HashSet<Integer> states) {
 		BooleanExpressionFactory<PositiveBooleanExpression> boolexpr = SAFA.getBooleanExpressionFactory();
 

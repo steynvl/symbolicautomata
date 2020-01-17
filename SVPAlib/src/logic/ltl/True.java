@@ -7,6 +7,7 @@ import java.util.HashSet;
 import automata.safa.BooleanExpressionFactory;
 import automata.safa.SAFA;
 import automata.safa.SAFAInputMove;
+import automata.safa.SAFAMove;
 import automata.safa.booleanexpression.PositiveBooleanExpression;
 import theory.BooleanAlgebra;
 
@@ -34,7 +35,7 @@ public class True<P, S> extends LTLFormula<P, S> {
 
 	@Override
 	protected PositiveBooleanExpression accumulateSAFAStatesTransitions(
-			HashMap<LTLFormula<P, S>, PositiveBooleanExpression> formulaToState, Collection<SAFAInputMove<P, S>> moves,
+			HashMap<LTLFormula<P, S>, PositiveBooleanExpression> formulaToState, Collection<SAFAMove<P, S>> moves,
 			Collection<Integer> finalStates, BooleanAlgebra<P, S> ba, HashSet<Integer> states) {
 		BooleanExpressionFactory<PositiveBooleanExpression> boolexpr = SAFA.getBooleanExpressionFactory();
 

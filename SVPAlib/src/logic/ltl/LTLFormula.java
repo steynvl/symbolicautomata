@@ -5,11 +5,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import automata.safa.SAFAMove;
 import org.sat4j.specs.TimeoutException;
 
 import automata.safa.BooleanExpression;
 import automata.safa.SAFA;
-import automata.safa.SAFAInputMove;
 import automata.safa.booleanexpression.PositiveBooleanExpression;
 import theory.BooleanAlgebra;
 
@@ -20,8 +20,8 @@ public abstract class LTLFormula<P,S> {
 		HashMap<LTLFormula<P, S>, PositiveBooleanExpression> formulaToStateId = new HashMap<>();
 		
 		Collection<Integer> finalStates = new HashSet<>();
-		Collection<SAFAInputMove<P, S>> moves = new LinkedList<>();
-		
+		Collection<SAFAMove<P, S>> moves = new LinkedList<>();
+
 		int emptyId = 0;
 		HashSet<Integer> states = new HashSet<>();
 		states.add(emptyId);
@@ -30,7 +30,7 @@ public abstract class LTLFormula<P,S> {
 		PositiveBooleanExpression initialState = this.accumulateSAFAStatesTransitions(formulaToStateId, moves, finalStates, ba, states);
 		
 
-		return SAFA.MkSAFA(moves, initialState, finalStates, ba, false, true, false);
+		return SAFA.MkSAFA(moves, initialState, finalStates, new HashSet<>(), ba, false, true, false);
 	}
 	
 	// Checks whether a formula should be a final state in the automaton
@@ -44,7 +44,7 @@ public abstract class LTLFormula<P,S> {
 	// returns set of disjoint predicates that are the triggers of transitions out of this state
 	protected abstract PositiveBooleanExpression accumulateSAFAStatesTransitions(
 			HashMap<LTLFormula<P, S>, PositiveBooleanExpression> formulaToInitState,
-			Collection<SAFAInputMove<P, S>> moves,
+			Collection<SAFAMove<P, S>> moves,
 			Collection<Integer> finalStates,
 			BooleanAlgebra<P, S> ba, HashSet<Integer> states);
 	

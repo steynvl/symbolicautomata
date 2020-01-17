@@ -8,6 +8,7 @@ import org.sat4j.specs.TimeoutException;
 
 import automata.safa.BooleanExpressionFactory;
 import automata.safa.SAFA;
+import automata.safa.SAFAMove;
 import automata.safa.SAFAInputMove;
 import automata.safa.booleanexpression.PositiveBooleanExpression;
 import theory.BooleanAlgebra;
@@ -49,7 +50,7 @@ public class Predicate<P, S> extends LTLFormula<P, S> {
 
 	@Override
 	protected PositiveBooleanExpression accumulateSAFAStatesTransitions(
-			HashMap<LTLFormula<P, S>, PositiveBooleanExpression> formulaToState, Collection<SAFAInputMove<P, S>> moves,
+			HashMap<LTLFormula<P, S>, PositiveBooleanExpression> formulaToState, Collection<SAFAMove<P, S>> moves,
 			Collection<Integer> finalStates, BooleanAlgebra<P, S> ba, HashSet<Integer> states) {
 		BooleanExpressionFactory<PositiveBooleanExpression> boolexpr = SAFA.getBooleanExpressionFactory();
 
@@ -62,7 +63,7 @@ public class Predicate<P, S> extends LTLFormula<P, S> {
 		states.add(id);
 		PositiveBooleanExpression initialState = boolexpr.MkState(id);
 		formulaToState.put(this, initialState);		
-		
+
 		moves.add(new SAFAInputMove<>(id, boolexpr.True(), predicate));
 
 		return initialState;

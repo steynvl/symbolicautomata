@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import automata.safa.SAFAMove;
 import org.sat4j.specs.TimeoutException;
 
 import automata.Automaton;
@@ -1665,13 +1666,13 @@ public class SFA<P, S> extends Automaton<P, S> {
 
 		PositiveBooleanExpression init = boolexpr.MkState(noneps.initialState);
 
-		Collection<SAFAInputMove<P, S>> moves = new LinkedList<>();
+		Collection<SAFAMove<P, S>> moves = new LinkedList<>();
 		for (SFAInputMove<P, S> move : noneps.getInputMovesFrom(noneps.states))
 			moves.add(new SAFAInputMove<P, S>(move.from, boolexpr.MkState(move.to), move.guard));
 
 		Collection<Integer> finalStates = new HashSet<>(noneps.finalStates);
 
-		return SAFA.MkSAFA(moves, init, finalStates, ba, false, true, false);
+		return SAFA.MkSAFA(moves, init, finalStates, new HashSet<>(), ba, false, true, false);
 	}
 
 	/**
