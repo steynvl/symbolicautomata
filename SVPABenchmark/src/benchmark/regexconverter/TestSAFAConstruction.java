@@ -68,6 +68,59 @@ public class TestSAFAConstruction {
         validateRegexInputString("de?|f[abc]?", Arrays.asList("d", "de", "fa", "f"), Arrays.asList("def"));
     }
 
+    @Test
+    public void testPositiveLookaheads() throws TimeoutException {
+        validateRegexConstruction("EB(?=AA)AAA", 19, 18, 1, 1);
+        validateRegexInputString("EB(?=AA)AAA", Arrays.asList("EBAAA"), Arrays.asList("EBAA"));
+
+        validateRegexInputString("(?=aa)aab", Arrays.asList("aab"), Arrays.asList("aa", "aaba"));
+        validateRegexInputString("(a(?=b)|qw*x)kl", Arrays.asList("qxkl", "qwxkl"), Arrays.asList("akl"));
+
+        validateRegexInputString("((?=aa)a|aa)", Arrays.asList("aa"), Arrays.asList("aaa", "aaaa"));
+        validateRegexInputString("((?=aa)a)a", Arrays.asList("aa"), Arrays.asList("aaa", "aaaa"));
+        validateRegexInputString("(?=aa)aa", Arrays.asList("aa"), Arrays.asList("a", "aaa"));
+        validateRegexInputString("(a|(?=[^a]{3})aa)aa", Arrays.asList("aaa"), Arrays.asList("aaaa"));
+        validateRegexInputString("((?=aa)a|aa)b*c",
+                Arrays.asList("aac", "aabc", "aabbbc"), Arrays.asList("ac", "abc"));
+
+        validateRegexInputString("a(?=d).", Arrays.asList("ad"), Arrays.asList("a", "aa", "adb"));
+        validateRegexInputString("a(?=c|d).", Arrays.asList("ac", "ad"), Arrays.asList("ae", "adac"));
+
+        StringBuilder sb = new StringBuilder();
+        StringBuilder s1 = new StringBuilder();
+        StringBuilder s2 = new StringBuilder();
+        for (int i = 0; i < 50; i++) {
+            sb.append("a");
+            s1.append("aaaaa");
+            s2.append("aaaaaaaaaaa");
+        }
+        validateRegexInputString("(?=a)(" + sb.toString() + ")+",
+                Arrays.asList(s1.toString(), s2.toString()), Arrays.asList("a"));
+
+        validateRegexInputString("abc(?=xyz)", Arrays.asList(), Arrays.asList("abcxyz"));
+        validateRegexInputString("abc(?=xyz)...", Arrays.asList("abcxyz"), Arrays.asList("abcxxz"));
+
+        validateRegexInputString("abc(?=abcde)(?=ab)", Arrays.asList(), Arrays.asList("abcabcdefg"));
+        validateRegexInputString("ab(?=c)\\wd\\w\\w", Arrays.asList("abcdef"), Arrays.asList());
+        validateRegexInputString("((?=([^a]{2})d)\\w{3})\\w\\w", Arrays.asList(),
+                Arrays.asList("abcdef", "abccef"));
+
+        validateRegexInputString("f[oa]+(?=o)", Arrays.asList(), Arrays.asList("faaao"));
+        validateRegexInputString("(?=.*[a-z])(?=.*[0-9])...",
+                Arrays.asList("a3d"), Arrays.asList("333", "a3", "aqq"));
+        validateRegexInputString("((?=a).)*", Arrays.asList("", "a", "aa", "aaa"), Arrays.asList("b"));
+    }
+
+    @Test
+    public void testNegativeLookaheads() throws TimeoutException {
+        validateRegexInputString("(?!aa)..", Arrays.asList("ab", "ba", "bb"), Arrays.asList("aa"));
+    }
+
+    @Test
+    public void mmm() {
+        printDot("");
+    }
+
     /* helper methods */
     private void validateRegexInputString(String regex,
                                           List<String> matching,

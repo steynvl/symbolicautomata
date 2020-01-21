@@ -20,6 +20,7 @@ import automata.sfa.SFA;
 import automata.sfa.SFAInputMove;
 import automata.sfa.SFAMove;
 import theory.BooleanAlgebra;
+import theory.intervals.UnaryCharIntervalSolver;
 import utilities.Pair;
 import utilities.Timers;
 import utilities.UnionFindHopKarp;
@@ -156,7 +157,7 @@ public class SAFA<P, S> {
 		aut.initialState = initialState;
 
 		/* make sure two final state sets are mutually exclusive  */
-		assert finalStates.stream().noneMatch(lookaheadFinalStates::contains);
+		//assert finalStates.stream().noneMatch(lookaheadFinalStates::contains);
 
 		aut.finalStates = new HashSet<>(finalStates);
 		aut.lookaheadFinalStates = new HashSet<>(lookaheadFinalStates);
@@ -438,6 +439,8 @@ public class SAFA<P, S> {
 		transitions.add(new SAFAEpsilon<>(initial, andNode));
 
 		finalStates.add(afterLookAhead);
+
+		lookaheadFinalStates.addAll(aut.finalStates);
 
 		return MkSAFA(transitions, initialState, finalStates, lookaheadFinalStates, ba);
 	}
@@ -1215,7 +1218,7 @@ public class SAFA<P, S> {
 		Collection<SAFAMove<P, S>> transitions = new ArrayList<>();
 
 		for(SAFAMove<P, S> t: this.getMoves())
-			transitions.add(new SAFAInputMove<P,S>(t.from, t.to, ba.True()));
+			transitions.add(new SAFAInputMove<>(t.from, t.to, ba.True()));
 		
 		return MkSAFA(
 				transitions, this.initialState, finalStates, lookaheadFinalStates, ba,
@@ -1232,6 +1235,8 @@ public class SAFA<P, S> {
 		// DeMorganize all transitions
 
 		/* TODO remove all epsilon transitions  */
+
+//		System.out.println(getDot("before"));
 
 		Collection<SAFAMove<P, S>> transitions = new ArrayList<>();
 
@@ -1270,6 +1275,12 @@ public class SAFA<P, S> {
 		}
 
 		PositiveBooleanExpression notInitial = demorganize.apply(initialState);
+
+//		System.out.println(MkSAFA(
+//				transitions, notInitial, nonFinal, nonLookaheadFinal, ba,
+//				false, false, false
+//		).getDot("after"));
+
 		return MkSAFA(
 				transitions, notInitial, nonFinal, nonLookaheadFinal, ba,
 				false, false, false
@@ -1428,7 +1439,7 @@ public class SAFA<P, S> {
 				sb.append(",shape=square");
 			}
 
-			if (getFinalStates().contains(state))
+			if (getFinalStates().contains(state) || getLookaheadFinalStates().contains(state))
 				sb.append(",peripheries=2");
 
 			sb.append("]\n");
