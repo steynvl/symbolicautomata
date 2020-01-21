@@ -486,22 +486,156 @@ public class SAFA<P, S> {
 
 	/**
 	 * Returns true if the SAFA accepts the input list
-	 * 
+	 *
 	 * @param input
 	 * @param ba
 	 * @return true if accepted false otherwise
-	 * @throws TimeoutException 
+	 * @throws TimeoutException
 	 */
 	public boolean accepts(List<S> input, BooleanAlgebra<P, S> ba) throws TimeoutException {
-		List<S> revInput = Lists.reverse(input);
+		assert initialState.getStates().size() == 1;
+		Integer init = initialState.getStates().iterator().next();
 
-		Collection<Integer> currConf = finalStates;
-
-		for (S el : revInput) {
-			currConf = getPrevState(currConf, el, ba);
+		/* computation graph nodes */
+		List<Set<Integer>> cgNodes = epsilonClosure(init);
+		for (S el : input) {
+			cgNodes = getNextState(cgNodes, el, ba);
+			cgNodes = epsilonClosure(cgNodes);
 		}
 
-		return initialState.hasModel(currConf);
+		Set<Integer> allFinalStates = new HashSet<>(finalStates);
+		allFinalStates.addAll(lookaheadFinalStates);
+		for (Set<Integer> treeNodes : cgNodes) {
+			if (allFinalStates.containsAll(treeNodes)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private List<Set<Integer>> getNextState(List<Set<Integer>> cgNodes,
+											S inputElement,
+											BooleanAlgebra<P, S> ba) throws TimeoutException {
+		List<Set<Integer>> updatedCg = new LinkedList<>();
+
+		for (Set<Integer> noEpsCg : cgNodes) {
+			List<Set<Integer>> updatedNoEpsCg = new LinkedList<>();
+			Set<Set<Integer>> haveProcessed = new HashSet<>();
+			for (Integer state : noEpsCg) {
+				Set<Integer> nextState = new HashSet<>();
+
+				for (SAFAMove<P, S> t : getMovesFrom(state)) {
+					if (!t.isEpsilonTransition() && t.hasModel(inputElement, ba)) {
+						if (t.to.getStates().size() > 1) {
+
+							assert t.to.getStates().size() == 2;
+							List<Set<Integer>> tempCg = new LinkedList<>();
+							Iterator<Integer> it = t.to.getStates().iterator();
+							tempCg.add(new HashSet<>(Arrays.asList(it.next(), it.next())));
+
+							for (Set<Integer> tList : tempCg) {
+								if (haveProcessed.size() == 0) {
+									updatedCg.add(tList);
+								} else {
+									for (Set<Integer> hp : haveProcessed) {
+										for (Integer hpVal : hp) {
+											Set<Integer> updated = new HashSet<>(tList);
+											updated.add(hpVal);
+											updatedCg.add(updated);
+										}
+									}
+								}
+							}
+						} else {
+							nextState.add(t.to.getStates().iterator().next());
+						}
+					}
+				}
+
+				updatedNoEpsCg.add(new HashSet<>(nextState));
+				haveProcessed.add(nextState);
+			}
+			updatedCg.addAll(Combinations.calculateCombinations(updatedNoEpsCg));
+		}
+
+		return updatedCg;
+	}
+
+	private List<Set<Integer>> epsilonClosure(int state) {
+		List<Set<Integer>> cgNodes = new LinkedList<>();
+		cgNodes.add(new HashSet<>(Arrays.asList(state)));
+		return epsilonClosure(cgNodes);
+	}
+
+	private List<Set<Integer>> epsilonClosure(List<Set<Integer>> cgNodes) {
+		return epsilonClosure(cgNodes, new HashSet<>());
+	}
+	private List<Set<Integer>> epsilonClosure(List<Set<Integer>> cgNodes, Set<SAFAMove<P, S>> recursiveVisited) {
+		List<Set<Integer>> updatedCg = new LinkedList<>();
+
+		for (Set<Integer> noEpsCg : cgNodes) {
+			List<Set<Integer>> updatedNoEpsCg = new LinkedList<>();
+
+			Set<Set<Integer>> haveProcessed = new HashSet<>();
+			for (Integer state : noEpsCg) {
+				Set<Integer> reached = new HashSet<>();
+				reached.add(state);
+				LinkedList<Integer> toVisit = new LinkedList<>();
+				toVisit.add(state);
+
+				while (toVisit.size() > 0) {
+					Integer curr = toVisit.removeFirst();
+					for (SAFAMove<P, S> t : getMovesFrom(curr)) {
+						if (t.isEpsilonTransition()) {
+
+							if (t.to.getStates().size() > 1) {
+								if (recursiveVisited.contains(t)) {
+									continue;
+								}
+								recursiveVisited.add(t);
+
+								assert t.to.getStates().size() == 2;
+
+								List<Set<Integer>> tempCg = new LinkedList<>();
+								Iterator<Integer> it = t.to.getStates().iterator();
+								tempCg.add(new HashSet<>(Arrays.asList(it.next(), it.next())));
+
+								tempCg = epsilonClosure(tempCg, recursiveVisited);
+
+								for (Set<Integer> tList : tempCg) {
+									if (haveProcessed.size() == 0) {
+										updatedCg.add(tList);
+									} else {
+										for (Set<Integer> hp : haveProcessed) {
+											for (Integer hpVal : hp) {
+												Set<Integer> updated = new HashSet<>(tList);
+												updated.add(hpVal);
+												updatedCg.add(updated);
+											}
+										}
+									}
+								}
+							} else {
+								Integer to = t.to.getStates().iterator().next();
+								if (!reached.contains(to)) {
+									reached.add(to);
+									toVisit.add(to);
+								}
+							}
+
+						}
+					}
+				}
+
+				updatedNoEpsCg.add(new HashSet<>(reached));
+				haveProcessed.add(reached);
+			}
+
+			updatedCg.addAll(Combinations.calculateCombinations(updatedNoEpsCg));
+		}
+
+		return updatedCg;
 	}
 
 	class Distance extends BooleanExpressionFactory<Integer> {
@@ -839,17 +973,6 @@ public class SAFA<P, S> {
 				return 1;
 			return xWitness.size() - yWitness.size();
 		}
-	}
-
-	protected Collection<Integer> getPrevState(Collection<Integer> currState, S inputElement, BooleanAlgebra<P, S> ba) throws TimeoutException {
-		Collection<Integer> prevState = new HashSet<Integer>();
-		for (SAFAInputMove<P, S> t : getInputMoves()) {
-			BooleanExpression b = t.to;
-			if (b.hasModel(currState) && ba.HasModel(t.guard, inputElement))
-				prevState.add(t.from);
-		}
-
-		return prevState;
 	}
 
 	/**
