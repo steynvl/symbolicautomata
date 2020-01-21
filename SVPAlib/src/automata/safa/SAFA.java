@@ -128,7 +128,7 @@ public class SAFA<P, S> {
 										   BooleanAlgebra<A, B> ba) throws TimeoutException {
 		return MkSAFA(
 				transitions, initialState, finalStates, lookaheadFinalStates,
-				ba, true, true, true
+				ba, false, false, false
 		);
 	}
 
@@ -370,6 +370,90 @@ public class SAFA<P, S> {
 		}
 
 		return MkSAFA(transitions, initialState, finalStates, finalLookaheadStates, ba);
+	}
+
+	/**
+	 * language star
+	 *
+	 * @throws TimeoutException
+	 */
+	@SuppressWarnings("unchecked")
+	public static <A, B> SAFA<A, B> star(SAFA<A, B> aut, BooleanAlgebra<A, B> ba) throws TimeoutException {
+		Collection<SAFAMove<A, B>> transitions = new ArrayList<>();
+		PositiveBooleanExpression initialState;
+		Integer init;
+		Collection<Integer> finalStates = new HashSet<>();
+		Collection<Integer> lookaheadFinalStates = new HashSet<>(aut.lookaheadFinalStates);
+
+		init = aut.maxStateId + 1;
+		initialState = SAFA.getBooleanExpressionFactory().MkState(init);
+
+		for (SAFAMove<A, B> t : aut.getTransitions())
+			transitions.add((SAFAMove<A, B>) t.clone());
+
+		// add eps transition from finalStates to initial state
+		for (Integer finState : aut.finalStates)
+			transitions.add(new SAFAEpsilon<>(finState, initialState));
+
+		// add eps transition from new initial state to old initial state
+		assert aut.initialState.getStates().size() == 1;
+		PositiveBooleanExpression to = SAFA.getBooleanExpressionFactory().MkState(
+				aut.initialState.getStates().iterator().next()
+		);
+		transitions.add(new SAFAEpsilon<>(init, to));
+
+		// The only final state is the new initial state
+		finalStates.add(init);
+
+		return MkSAFA(transitions, initialState, finalStates, lookaheadFinalStates, ba);
+	}
+
+	/**
+	 * Performs a positive lookahead
+	 *
+	 * @throws TimeoutException
+	 */
+	@SuppressWarnings("unchecked")
+	public static <A, B> SAFA<A, B> positiveLookAhead(SAFA<A, B> aut,
+													  BooleanAlgebra<A, B> ba) throws TimeoutException {
+		/* TODO handle empty case */
+
+		/* components of new SFA */
+		Collection<SAFAMove<A, B>> transitions = new ArrayList<>();
+		Collection<Integer> finalStates = new HashSet<>();
+		Collection<Integer> lookaheadFinalStates = new HashSet<>(aut.lookaheadFinalStates);
+		int initial = aut.maxStateId + 1;
+		BooleanExpressionFactory<PositiveBooleanExpression> pb = SAFA.getBooleanExpressionFactory();
+		PositiveBooleanExpression initialState = pb.MkState(initial);
+		int afterLookAhead = aut.maxStateId + 2;
+
+		/* copy all transitions */
+		for (SAFAMove<A, B> t : aut.getTransitions())
+			transitions.add((SAFAMove<A, B>) t.clone());
+
+		/* make "and" node in SAFA */
+		PositiveBooleanExpression andNode = pb.MkAnd(
+				aut.initialState, SAFA.getBooleanExpressionFactory().MkState(afterLookAhead)
+		);
+		transitions.add(new SAFAEpsilon<>(initial, andNode));
+
+		finalStates.add(afterLookAhead);
+
+		return MkSAFA(transitions, initialState, finalStates, lookaheadFinalStates, ba);
+	}
+
+	public static <A, B> SAFA<A, B> dot(BooleanAlgebra<A, B> booleanAlgebra) throws TimeoutException {
+		// make a SAFA that has a transition which accepts TRUE
+		Collection<SAFAMove<A, B>> transitions = new LinkedList<>();
+
+		PositiveBooleanExpression initial = SAFA.getBooleanExpressionFactory().MkState(0);
+		PositiveBooleanExpression to = SAFA.getBooleanExpressionFactory().MkState(1);
+
+		transitions.add(new SAFAInputMove<>(0, to, booleanAlgebra.True()));
+		Collection<Integer> finalStates = new LinkedList<>();
+		finalStates.add(1);
+
+		return SAFA.MkSAFA(transitions, initial, finalStates, new HashSet<>(), booleanAlgebra);
 	}
 
 	// ------------------------------------------------------
@@ -1200,6 +1284,48 @@ public class SAFA<P, S> {
 			transitions.add(new SAFAInputMove<>(sink, boolexpr.MkState(sink), ba.True()));
 
 		return MkSAFA(transitions, initialState, finalStates, lookaheadFinalStates, ba, false, false, false);
+	}
+
+	public String getDot(String name) {
+		Set<Integer> andNodes = new HashSet<>();
+		for (Integer state : getStates()) {
+			for (SAFAMove<P, S> t : getMovesFrom(state)) {
+				if (t.to.getStates().size() > 1) {
+					andNodes.add(t.from);
+				}
+			}
+		}
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("digraph " + name + "{\n rankdir=LR;\n");
+		for (Integer state : getStates()) {
+
+			sb.append(state + "[label=" + state);
+			if (andNodes.contains(state)) {
+				sb.append(",shape=square");
+			}
+
+			if (getFinalStates().contains(state))
+				sb.append(",peripheries=2");
+
+			sb.append("]\n");
+			assert getInitialState().getStates().size() == 1;
+			if (state.equals(getInitialState().getStates().iterator().next()))
+				sb.append("XX" + state + " [color=white, label=\"\"]");
+		}
+
+		Integer initial = getInitialState().getStates().iterator().next();
+		sb.append("XX" + initial + " -> " + initial + "\n");
+
+		for (Integer state : getStates()) {
+			for (SAFAMove<P, S> t : getMovesFrom(state)) {
+				sb.append(t.toDotString());
+			}
+		}
+
+		sb.append("}");
+
+		return sb.toString();
 	}
 
 	// ------------------------------------------------------

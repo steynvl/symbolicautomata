@@ -53,7 +53,8 @@ public class RegexConverter {
 
 			SAFA<CharPred, Character> left = toSAFA(cphi.getMyRegex1(), unarySolver);
 			SAFA<CharPred, Character> right = toSAFA(cphi.getMyRegex2(), unarySolver);
-			//outputSAFA = SAFA.union(left, right, unarySolver);
+
+			outputSAFA = SAFA.union(left, right, unarySolver);
 
 			return outputSAFA;
 
@@ -71,38 +72,36 @@ public class RegexConverter {
 				while (it.hasNext()) {
 					regexNode = it.next();
 					SAFA<CharPred, Character> followingSAFA = toSAFA(regexNode, unarySolver);
-					//iterateSAFA = SAFA.concatenate(iterateSAFA, followingSAFA, unarySolver);
+					iterateSAFA = SAFA.concatenate(iterateSAFA, followingSAFA, unarySolver);
 				}
 			}
 			return iterateSAFA;
-
 		} else if (phi instanceof DotNode) {
-//			return SAFA.dot(unarySolver);
-
+			return SAFA.dot(unarySolver);
 
 		} else if (phi instanceof AnchorNode) {
 			AnchorNode cphi = (AnchorNode) phi;
 			outputSAFA = toSAFA(cphi.getMyRegex1(), unarySolver);
 			if (!cphi.hasStartAnchor()) {
 				// put startAnchor SAFA to the front of the following SAFA
-				//outputSAFA = SAFA.concatenate(SAFA.getFullSAFA(unarySolver), outputSAFA, unarySolver);
+				outputSAFA = SAFA.concatenate(SAFA.getFullSAFA(unarySolver), outputSAFA, unarySolver);
 			}
 			if (!cphi.hasEndAnchor()) {
 				// for end anchor, create a SAFA that has state 0 that goes to state 1 with every input and add self-loop for state 1
-				//outputSAFA = SAFA.concatenate(outputSAFA, SAFA.getFullSAFA(unarySolver), unarySolver);
+				outputSAFA = SAFA.concatenate(outputSAFA, SAFA.getFullSAFA(unarySolver), unarySolver);
 			}
 
 		} else if (phi instanceof StarNode) {
 			// use SAFA.star() method
 			StarNode cphi = (StarNode) phi;
 			SAFA<CharPred, Character> tempSAFA = toSAFA(cphi.getMyRegex1(), unarySolver);
-			//outputSAFA = SAFA.star(tempSAFA, unarySolver);
+			outputSAFA = SAFA.star(tempSAFA, unarySolver);
 
 		} else if (phi instanceof PlusNode) {
 			// expr+ = expr concatenate with expr*
 			PlusNode cphi = (PlusNode) phi;
 			SAFA<CharPred, Character> tempSAFA = toSAFA(cphi.getMyRegex1(), unarySolver);
-			//outputSAFA = SAFA.concatenate(tempSAFA, SAFA.star(tempSAFA, unarySolver), unarySolver);
+			outputSAFA = SAFA.concatenate(tempSAFA, SAFA.star(tempSAFA, unarySolver), unarySolver);
 
 		} else if (phi instanceof OptionalNode) {
 			OptionalNode cphi = (OptionalNode) phi;
@@ -111,14 +110,17 @@ public class RegexConverter {
 			// build an SAFA that only accepts the empty string
 			Collection<SAFAMove<CharPred, Character>> transitions = new LinkedList<SAFAMove<CharPred, Character>>();
 			PositiveBooleanExpression initial = SAFA.getBooleanExpressionFactory().MkState(0);
-			//outputSAFA = SAFA.union(tempSAFA, SAFA.MkSAFA(transitions, initial, Arrays.asList(0), unarySolver), unarySolver);
+			outputSAFA = SAFA.union(
+					tempSAFA,
+					SAFA.MkSAFA(transitions, initial, Arrays.asList(0), new HashSet<>(), unarySolver), unarySolver
+			);
 
 		} else if (phi instanceof PositiveLookaheadNode) {
 			PositiveLookaheadNode cphi = (PositiveLookaheadNode) phi;
 			SAFA<CharPred, Character> lookAhead = toSAFA(cphi.getMyRegex1(), unarySolver);
-			//lookAhead = SAFA.concatenate(lookAhead, SAFA.star(SAFA.dot(unarySolver), unarySolver), unarySolver);
+			lookAhead = SAFA.concatenate(lookAhead, SAFA.star(SAFA.dot(unarySolver), unarySolver), unarySolver);
 
-			//outputSAFA = SAFA.positiveLookAhead(lookAhead, unarySolver);
+			outputSAFA = SAFA.positiveLookAhead(lookAhead, unarySolver);
 
 			return outputSAFA;
 
@@ -129,10 +131,10 @@ public class RegexConverter {
 			System.out.println(sb.toString());
 			SAFA<CharPred, Character> lookAhead = toSAFA(cphi.getMyRegex1(), unarySolver);
 
-			//lookAhead = SAFA.concatenate(lookAhead, SAFA.star(SAFA.dot(unarySolver), unarySolver), unarySolver);
-			//lookAhead = lookAhead.negate(unarySolver, finalLookAheadStates);
+			lookAhead = SAFA.concatenate(lookAhead, SAFA.star(SAFA.dot(unarySolver), unarySolver), unarySolver);
+			lookAhead = lookAhead.negate(unarySolver);
 
-			//outputSAFA = SAFA.positiveLookAhead(lookAhead, unarySolver, finalLookAheadStates);
+			outputSAFA = SAFA.positiveLookAhead(lookAhead, unarySolver);
 
 			return outputSAFA;
 
@@ -142,6 +144,7 @@ public class RegexConverter {
 			StringBuilder sb1 = new StringBuilder();
 			cphi.getMyRegex1().toString(sb1);
 			StringBuilder sb2 = new StringBuilder();
+			/* TODO translation functions (phi, tau, etc.) */
 			//RegexHelper.translate(cphi.getMyRegex1()).toString(sb2);
 			//outputSAFA = toSAFA(RegexHelper.translate(cphi.getMyRegex1()), unarySolver);
 		} else if (phi instanceof NormalCharNode) {
@@ -266,7 +269,7 @@ public class RegexConverter {
 			outputSAFA = tempSAFA;
 			// i starts from 1 because we already have one repetition above
 			for (int i = 1; i < cphi.getMin(); i++) { //now we looped min times
-				// outputSAFA = SAFA.concatenate(outputSAFA, tempSAFA, unarySolver);
+				outputSAFA = SAFA.concatenate(outputSAFA, tempSAFA, unarySolver);
 			}
 
 			if (cphi.getMode().equals("min")) {
@@ -275,13 +278,13 @@ public class RegexConverter {
 
 			} else if (cphi.getMode().equals("minToInfinite")) {
 				// concatenate with a star, e.g. R{3,} = RRR(R)*
-				// return SAFA.concatenate(outputSAFA, SAFA.star(tempSAFA, unarySolver), unarySolver);
+				return SAFA.concatenate(outputSAFA, SAFA.star(tempSAFA, unarySolver), unarySolver);
 
 			} else { // minToMax
 				SAFA<CharPred, Character> unions = outputSAFA;
 				for(int i = cphi.getMin(); i< cphi.getMax(); i++){
-					//unions = SAFA.concatenate(unions, tempSAFA, unarySolver);
-					//outputSAFA = SAFA.union(outputSAFA, unions, unarySolver);
+					unions = SAFA.concatenate(unions, tempSAFA, unarySolver);
+					outputSAFA = SAFA.union(outputSAFA, unions, unarySolver);
 				}
 				return outputSAFA;
 			}

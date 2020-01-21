@@ -220,14 +220,6 @@ public class testSFAconverter {
 		
 		
 	}
-	
-	
-	
-	
-	
-	
-	
-	
 
 	// -------------------------
 	// Auxiliary methods
