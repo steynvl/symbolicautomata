@@ -7,7 +7,8 @@ import org.junit.runners.Suite;
 
 @Suite.SuiteClasses({
     TestSAFAConstruction.class,
-    TestRegexTranslation.class
+    TestRegexTranslation.class,
+    TestSAFANegation.class
 })
 
 public class TestSAFA { }
