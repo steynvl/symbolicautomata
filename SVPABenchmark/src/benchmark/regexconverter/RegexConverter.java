@@ -141,12 +141,11 @@ public class RegexConverter {
 		} else if (phi instanceof AtomicGroupNode) {
 			AtomicGroupNode cphi = (AtomicGroupNode) phi;
 
-			StringBuilder sb1 = new StringBuilder();
-			cphi.getMyRegex1().toString(sb1);
-			StringBuilder sb2 = new StringBuilder();
-			/* TODO translation functions (phi, tau, etc.) */
-			//RegexHelper.translate(cphi.getMyRegex1()).toString(sb2);
-			//outputSAFA = toSAFA(RegexHelper.translate(cphi.getMyRegex1()), unarySolver);
+			System.out.println(RegexTranslator.printNode(
+					RegexTranslator.translate(cphi.getMyRegex1())
+			) + " [atomic]");
+
+			outputSAFA = toSAFA(RegexTranslator.translate(cphi.getMyRegex1()), unarySolver);
 		} else if (phi instanceof NormalCharNode) {
 			// make a SAFA that has a transition which accepts this char
 			NormalCharNode cphi = (NormalCharNode) phi;
