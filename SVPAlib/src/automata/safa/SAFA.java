@@ -1334,15 +1334,11 @@ public class SAFA<P, S> {
 	public SAFA<P, S> negate(BooleanAlgebra<P, S> ba) throws TimeoutException {
 		// DeMorganize all transitions
 
-		System.out.println(getDot("toNegate"));
-
 		if (lookaheadFinalStates.size() > 0) {
 			System.out.println("Negating SAFA with universal states!");
 		}
 
 		SAFA<P, S> aut = removeEpsilonMovesFrom(this, ba);
-
-		System.out.println(aut.getDot("afterEpsRemove"));
 
 		Collection<SAFAMove<P, S>> transitions = new ArrayList<>();
 

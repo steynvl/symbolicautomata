@@ -24,10 +24,6 @@ public class TestSAFANegation {
     public void testRemoveEpsilonTransitions02() throws TimeoutException {
         String regex = "(?=a(?=b))ab";
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
-
-//        Utils.printDot(regex);
-//        System.out.println(noEps.getDot("noEps"));
-
         Utils.validateRegexInputString(noEps, regex, Arrays.asList("ab", "ba"));
     }
 
@@ -59,6 +55,53 @@ public class TestSAFANegation {
         List<String> strings = Arrays.asList("a", "aa", "aaa");
 
         Utils.validateRegexInputString(Utils.constructFromRegex(regex), regex, strings);
+
+        SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
+        Utils.validateRegexInputString(noEps, regex, strings);
+    }
+
+    @Test
+    public void testNegation04() throws TimeoutException {
+        String regex = "(?!aa)..";
+        List<String> strings = Arrays.asList("a", "aa", "aaa", "ab", "ba");
+
+        Utils.validateRegexInputString(Utils.constructFromRegex(regex), regex, strings);
+
+        SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
+        Utils.validateRegexInputString(noEps, regex, strings);
+    }
+
+    @Test
+    public void testNegation05() throws TimeoutException {
+        String regex = "a(?!b).";
+        List<String> strings = Arrays.asList("ad", "ab", "ac");
+
+        Utils.validateRegexInputString(Utils.constructFromRegex(regex), regex, strings);
+
+        SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
+        Utils.validateRegexInputString(noEps, regex, strings);
+    }
+
+    @Test
+    public void testNegation06() throws TimeoutException {
+        String regex = "([ab]*)(?!b)c";
+        List<String> strings = Arrays.asList("abc");
+
+        Utils.validateRegexInputString(Utils.constructFromRegex(regex), regex, strings);
+
+        SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
+        Utils.validateRegexInputString(noEps, regex, strings);
+    }
+
+    @Test
+    public void testNegation07() throws TimeoutException {
+        String regex = "a(?!b(?!c))..";
+        List<String> strings = Arrays.asList("abc", "ada", "abe");
+
+        Utils.validateRegexInputString(Utils.constructFromRegex(regex), regex, strings);
+
+        System.out.println(Utils.constructFromRegex(regex).getDot("safa"));
+        System.out.println(Utils.constructEpsilonFree(regex).getDot("noEps"));
 
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
         Utils.validateRegexInputString(noEps, regex, strings);

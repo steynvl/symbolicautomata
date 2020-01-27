@@ -1,5 +1,7 @@
 package benchmark.regexconverter;
 
+import RegexParser.RegexNode;
+import RegexParser.RegexParserProvider;
 import automata.safa.SAFA;
 import benchmark.SAFAProvider;
 import org.sat4j.specs.TimeoutException;
@@ -20,6 +22,10 @@ public class Utils {
 
     public static SAFA<CharPred, Character> constructFromRegex(String regex) {
         return new SAFAProvider(regex, solver).getSAFA();
+    }
+
+    public static SAFA<CharPred, Character> constructFromNode(RegexNode node) throws TimeoutException {
+        return RegexConverter.toSAFA(node, new UnaryCharIntervalSolver());
     }
 
     public static SAFA<CharPred, Character> constructEpsilonFree(String regex) throws TimeoutException {
@@ -67,6 +73,21 @@ public class Utils {
     public static void validateRegexConstruction(String regex, int stateCnt, int transitionCnt,
                                                  int finalStateCnt, int lookaheadCnt) {
         validateRegexConstruction(constructFromRegex(regex), stateCnt, transitionCnt, finalStateCnt, lookaheadCnt);
+    }
+
+    public static RegexNode parseRegex(String regex) {
+        String[] str = {regex};
+
+        List<RegexNode> nodes = RegexParserProvider.parse(str);
+        assert nodes.size() > 0;
+
+        return nodes.get(0);
+    }
+
+    public static String regexToString(RegexNode node) {
+        StringBuilder sb = new StringBuilder();
+        node.toString(sb);
+        return sb.toString();
     }
 
     public static void printDot(String regex) {
