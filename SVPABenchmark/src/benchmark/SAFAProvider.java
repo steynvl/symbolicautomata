@@ -2,7 +2,6 @@ package benchmark;
 
 import RegexParser.RegexNode;
 import RegexParser.RegexParserProvider;
-import RegexParser.UnionNode;
 import automata.safa.SAFA;
 import benchmark.regexconverter.RegexConverter;
 import org.sat4j.specs.TimeoutException;
