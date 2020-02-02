@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import automata.safa.booleanexpression.PositiveOr;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
 
@@ -38,6 +39,8 @@ public class LTLUnitTest {
 		SAFA<CharPred, Character> sconj = conj.getSAFA(ba);
 		LTLFormula<CharPred, Character> union = new Or<>(eva, evn);
 		SAFA<CharPred, Character> sunion = union.getSAFA(ba);
+
+		System.out.println(seva.getInitialState() instanceof PositiveOr);
 
 		assertTrue(seva.accepts(la, ba));
 		assertFalse(seva.accepts(lb, ba));

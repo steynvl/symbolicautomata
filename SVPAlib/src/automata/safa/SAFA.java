@@ -9,11 +9,10 @@ package automata.safa;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import automata.safa.booleanexpression.PositiveId;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Triple;
 import org.sat4j.specs.TimeoutException;
-
-import com.google.common.collect.Lists;
 
 import automata.safa.booleanexpression.PositiveBooleanExpression;
 import automata.safa.booleanexpression.PositiveBooleanExpressionFactory;
@@ -21,8 +20,6 @@ import automata.sfa.SFA;
 import automata.sfa.SFAInputMove;
 import automata.sfa.SFAMove;
 import theory.BooleanAlgebra;
-import theory.intervals.UnaryCharIntervalSolver;
-import utilities.IntegerPair;
 import utilities.Pair;
 import utilities.Timers;
 import utilities.UnionFindHopKarp;
@@ -133,6 +130,13 @@ public class SAFA<P, S> {
 				transitions, initialState, finalStates, lookaheadFinalStates,
 				ba, false, false, false
 		);
+	}
+
+	public static <A, B> SAFA<A, B> MkSAFA(Collection<SAFAMove<A, B>> transitions,
+										   PositiveBooleanExpression initialState,
+										   Collection<Integer> finalStates,
+										   BooleanAlgebra<A, B> ba) throws TimeoutException {
+		return MkSAFA(transitions, initialState, finalStates, new HashSet<>(), ba);
 	}
 
 	/*
@@ -498,11 +502,8 @@ public class SAFA<P, S> {
 	 * @throws TimeoutException
 	 */
 	public boolean accepts(List<S> input, BooleanAlgebra<P, S> ba) throws TimeoutException {
-		assert initialState.getStates().size() == 1;
-		Integer init = initialState.getStates().iterator().next();
-
 		/* computation graph nodes */
-		List<Set<Integer>> cgNodes = epsilonClosure(init);
+		List<Set<Integer>> cgNodes = epsilonClosure(initialState);
 		for (S el : input) {
 			cgNodes = getNextState(cgNodes, el, ba);
 			cgNodes = epsilonClosure(cgNodes);
@@ -564,9 +565,9 @@ public class SAFA<P, S> {
 		return updatedCg;
 	}
 
-	private List<Set<Integer>> epsilonClosure(int state) {
+	private List<Set<Integer>> epsilonClosure(PositiveBooleanExpression state) {
 		List<Set<Integer>> cgNodes = new LinkedList<>();
-		cgNodes.add(new HashSet<>(Arrays.asList(state)));
+		cgNodes.add(state.getStates());
 		return epsilonClosure(cgNodes);
 	}
 
@@ -1251,6 +1252,103 @@ public class SAFA<P, S> {
 	}
 
 	// ------------------------------------------------------
+	// Shuffle operation
+	// ------------------------------------------------------
+
+	/**
+	 * Returns an automaton that accepts the shuffle (interleaving) of
+	 * the languages of the given automata. Both automata are determinized,
+	 * if not already deterministic. Does not modify the input automata languages.
+	 *
+	 * Complexity: quadratic in number of states (if already deterministic).
+	 */
+	public static <P, S> SAFA<P, S> shuffle(SAFA<P, S> aut1, SAFA<P, S> aut2, BooleanAlgebra<P, S> ba) throws TimeoutException{
+		if (aut1.getLookaheadFinalStates().size() > 0 || aut1.getTransitions().stream().anyMatch(t -> t.to.getStates().size() > 1)) {
+			/* TODO */
+		} else if (aut2.getLookaheadFinalStates().size() > 0 || aut2.getTransitions().stream().anyMatch(t -> t.to.getStates().size() > 1)) {
+			/* TODO */
+		}
+
+		aut1 = SAFA.removeEpsilonMovesFrom(aut1, ba);
+		aut2 = SAFA.removeEpsilonMovesFrom(aut2, ba);
+
+		int maxStateId = Math.max(aut1.maxStateId, aut2.maxStateId);
+
+		Map<Integer, List<SAFAMove<P, S>>> transitions1 = getSortedTransitions(aut1);
+		Map<Integer, List<SAFAMove<P, S>>> transitions2 = getSortedTransitions(aut2);
+
+		Collection<Integer> finalStates = new HashSet<>();
+		Collection<SAFAMove<P, S>> transitions = new ArrayList<>();
+
+		LinkedList<StatePair> worklist = new LinkedList<>();
+		Map<StatePair, StatePair> newStates = new HashMap<>();
+		PositiveBooleanExpression initial = SAFA.getBooleanExpressionFactory().MkState(++maxStateId);
+
+		StatePair p = new StatePair(initial, getState(aut1.initialState), getState(aut2.initialState));
+		worklist.add(p);
+		newStates.put(p, p);
+
+		while (worklist.size() > 0) {
+			p = worklist.removeFirst();
+
+			if (aut1.finalStates.contains(p.s1) && aut2.finalStates.contains(p.s2)) {
+				finalStates.add(getState(p.s));
+			}
+
+			List<SAFAMove<P, S>> t1 = transitions1.get(p.s1);
+			for (int i = 0; i < t1.size(); i++) {
+				StatePair q = new StatePair(getState(t1.get(i).to), p.s2);
+				StatePair r = newStates.get(q);
+
+				if (r == null) {
+					q.s = SAFA.getBooleanExpressionFactory().MkState(++maxStateId);
+					worklist.add(q);
+					newStates.put(q, q);
+					r = q;
+				}
+
+				transitions.add(new SAFAInputMove<>(getState(p.s), r.s, t1.get(i).guard));
+			}
+
+			List<SAFAMove<P, S>> t2 = transitions2.get(p.s2);
+			for (int i = 0; i < t2.size(); i++) {
+				StatePair q = new StatePair(p.s1, getState(t2.get(i).to));
+				StatePair r = newStates.get(q);
+				if (r == null) {
+					q.s = SAFA.getBooleanExpressionFactory().MkState(++maxStateId);
+					worklist.add(q);
+					newStates.put(q, q);
+					r = q;
+				}
+
+				transitions.add(new SAFAInputMove<>(getState(p.s), r.s, t2.get(i).guard));
+			}
+		}
+
+		return removeDeadOrUnreachableStates(MkSAFA(transitions, initial, finalStates, new HashSet<>(), ba), ba);
+	}
+
+	private static <P, S> Map<Integer, List<SAFAMove<P, S>>> getSortedTransitions(SAFA<P, S> safa) {
+		Collection<Integer> states = safa.getStates();
+
+		Map<Integer, List<SAFAMove<P, S>>> sortedTransitions = new HashMap<>();
+		for (Integer s : states) {
+			List<SAFAMove<P, S>> moves = new ArrayList<>(safa.getTransitionsFrom(s));
+			moves.sort(Comparator.comparingInt(m -> getState(m.to)));
+
+			assert !sortedTransitions.containsKey(s);
+			sortedTransitions.put(s, moves);
+		}
+
+		return sortedTransitions;
+	}
+
+	private static Integer getState(PositiveBooleanExpression pb) {
+		assert pb instanceof PositiveId;
+		return ((PositiveId) pb).state;
+	}
+
+	// ------------------------------------------------------
 	// Boolean automata operations
 	// ------------------------------------------------------
 
@@ -1701,7 +1799,7 @@ public class SAFA<P, S> {
 				sb.append(",peripheries=2");
 
 			sb.append("]\n");
-			assert getInitialState().getStates().size() == 1;
+//			assert getInitialState().getStates().size() == 1;
 			if (state.equals(getInitialState().getStates().iterator().next()))
 				sb.append("XX" + state + " [color=white, label=\"\"]");
 		}
