@@ -1,6 +1,7 @@
 package benchmark.regexconverter;
 
 import automata.safa.SAFA;
+import benchmark.SFT.codecs.Trie;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
@@ -34,8 +35,15 @@ public class TestSAFANegation {
 
         Utils.validateRegexInputString(Utils.constructFromRegex(regex), regex, strings);
 
+
+//        SAFA<CharPred, Character> a = Utils.constructFromRegex(regex);
+//        System.out.println(a.getDot("qqq"));
+//        System.out.println(a);
+
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
-        Utils.validateRegexInputString(noEps, regex, strings);
+        System.out.println(noEps.getDot("noEps"));
+        System.out.println(noEps);
+//        Utils.validateRegexInputString(noEps, regex, strings);
     }
 
     @Test
@@ -90,6 +98,7 @@ public class TestSAFANegation {
         Utils.validateRegexInputString(Utils.constructFromRegex(regex), regex, strings);
 
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
+
         Utils.validateRegexInputString(noEps, regex, strings);
     }
 
@@ -104,6 +113,9 @@ public class TestSAFANegation {
         System.out.println(Utils.constructEpsilonFree(regex).getDot("noEps"));
 
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
+
+        System.out.println(noEps.getDot("noEps"));
+
         Utils.validateRegexInputString(noEps, regex, strings);
     }
 

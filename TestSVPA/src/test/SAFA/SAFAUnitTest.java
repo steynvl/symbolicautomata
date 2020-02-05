@@ -54,12 +54,10 @@ public class SAFAUnitTest {
 		assertTrue(atLeastOneNum.accepts(lab, ba));
 		assertFalse(atLeastOneNum.accepts(lnot, ba));
 
-//		System.out.println(union);
-
-//		assertTrue(union.accepts(la, ba));
-//		assertTrue(union.accepts(lb, ba));
-//		assertTrue(union.accepts(lab, ba));
-//		assertFalse(union.accepts(lnot, ba));
+		assertTrue(union.accepts(la, ba));
+		assertTrue(union.accepts(lb, ba));
+		assertTrue(union.accepts(lab, ba));
+		assertFalse(union.accepts(lnot, ba));
 	}
 	
 	@Test
@@ -87,10 +85,11 @@ public class SAFAUnitTest {
 		BooleanAlgebra<SAFA<CharPred,Character>,List<Character>> lol = new SAFABooleanAlgebra<>(ba, boolexpr);
 		CharPred a = new CharPred('a');
 		CharPred z = new CharPred('z');
-//		SAFA<SAFA<CharPred,Character>,List<Character>> evAandZ = eventually(lol, eventually(ba, a).intersectionWith(eventually(ba, z), ba));
-//		SAFA<SAFA<CharPred,Character>,List<Character>> evAandEvZ = eventually(lol, eventually(ba, a)).intersectionWith(eventually(lol, eventually(ba, z)), lol);
-//		assertFalse(SAFA.isEquivalent(evAandZ, evAandEvZ, lol, boolexpr).first);
-//		assertTrue(SAFA.isEquivalent(evAandZ.unionWith(evAandEvZ, lol), evAandEvZ, lol, boolexpr).first);
+		SAFA<SAFA<CharPred,Character>,List<Character>> evAandZ = eventually(lol, eventually(ba, a).intersectionWith(eventually(ba, z), ba));
+		SAFA<SAFA<CharPred,Character>,List<Character>> evAandEvZ = eventually(lol, eventually(ba, a)).intersectionWith(eventually(lol, eventually(ba, z)), lol);
+
+		assertFalse(SAFA.isEquivalent(evAandZ, evAandEvZ, lol, boolexpr).first);
+		assertTrue(SAFA.isEquivalent(evAandZ.unionWith(evAandEvZ, lol), evAandEvZ, lol, boolexpr).first);
 	}
 
 	// ---------------------------------------
@@ -126,7 +125,7 @@ public class SAFAUnitTest {
 		transitionsA.add(new SAFAInputMove<CharPred, Character>(0, sp1, p));
 		transitionsA.add(new SAFAInputMove<CharPred, Character>(1, sp1, ba.True()));
 		try {
-			return SAFA.MkSAFA(transitionsA, boolexpr.MkState(0), Arrays.asList(1), ba);
+			return SAFA.MkSAFA(transitionsA, boolexpr.MkState(0), Arrays.asList(1), ba, true, true, true);
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -151,7 +150,7 @@ public class SAFAUnitTest {
 		Collection<SAFAMove<P,S>> transitions = new LinkedList<>();
 		transitions.add(new SAFAInputMove<P,S>(0, boolexpr.True(), predicate));
 		transitions.add(new SAFAInputMove<P,S>(0, boolexpr.MkState(0), ba.MkNot(predicate)));
-		return SAFA.MkSAFA(transitions, initialState, finalStates, ba);
+		return SAFA.MkSAFA(transitions, initialState, finalStates, ba, true, true, true);
 	}
 
 //    @Test
@@ -198,13 +197,13 @@ public class SAFAUnitTest {
 	public void testNegate() throws TimeoutException {
 		SAFA<CharPred, Character> a = atLeastOneAlpha.intersectionWith(atLeastOneNum, ba);
 		SAFA<CharPred, Character> b = atLeastOneNum.intersectionWith(atLeastOneAlpha, ba);
-//		SAFA<CharPred, Character> notA = a.negate(ba);
-//		SAFA<CharPred, Character> notB = b.negate(ba);
-//		BooleanExpressionFactory<SumOfProducts> boolexpr = SumOfProductsFactory.getInstance();
-//
-//		assertTrue(SAFA.isEmpty(a.intersectionWith(notA, ba), ba));
-//		assertTrue(SAFA.isEmpty(b.intersectionWith(notB, ba), ba));
-//		assertTrue(SAFA.isEquivalent(a, notA.negate(ba), ba, boolexpr).first);
-//		assertTrue(SAFA.isEquivalent(a, notB.negate(ba), ba, boolexpr).first);
+		SAFA<CharPred, Character> notA = a.negate(ba);
+		SAFA<CharPred, Character> notB = b.negate(ba);
+		BooleanExpressionFactory<SumOfProducts> boolexpr = SumOfProductsFactory.getInstance();
+
+		assertTrue(SAFA.isEmpty(a.intersectionWith(notA, ba), ba));
+		assertTrue(SAFA.isEmpty(b.intersectionWith(notB, ba), ba));
+		assertTrue(SAFA.isEquivalent(a, notA.negate(ba), ba, boolexpr).first);
+		assertTrue(SAFA.isEquivalent(a, notB.negate(ba), ba, boolexpr).first);
 	}
 }

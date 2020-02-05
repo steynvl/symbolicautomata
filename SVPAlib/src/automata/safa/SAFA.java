@@ -9,13 +9,12 @@ package automata.safa;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import automata.safa.booleanexpression.PositiveId;
+import automata.safa.booleanexpression.*;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Triple;
 import org.sat4j.specs.TimeoutException;
 
-import automata.safa.booleanexpression.PositiveBooleanExpression;
-import automata.safa.booleanexpression.PositiveBooleanExpressionFactory;
 import automata.sfa.SFA;
 import automata.sfa.SFAInputMove;
 import automata.sfa.SFAMove;
@@ -126,6 +125,10 @@ public class SAFA<P, S> {
 										   Collection<Integer> finalStates,
 										   Collection<Integer> lookaheadFinalStates,
 										   BooleanAlgebra<A, B> ba) throws TimeoutException {
+//		return MkSAFA(
+//				transitions, initialState, finalStates, lookaheadFinalStates,
+//				ba, false, false, false
+//		);
 		return MkSAFA(
 				transitions, initialState, finalStates, lookaheadFinalStates,
 				ba, false, false, false
@@ -137,6 +140,18 @@ public class SAFA<P, S> {
 										   Collection<Integer> finalStates,
 										   BooleanAlgebra<A, B> ba) throws TimeoutException {
 		return MkSAFA(transitions, initialState, finalStates, new HashSet<>(), ba);
+	}
+
+	public static <A, B> SAFA<A, B> MkSAFA(Collection<SAFAMove<A, B>> transitions,
+										   PositiveBooleanExpression initialState,
+										   Collection<Integer> finalStates,
+										   BooleanAlgebra<A, B> ba,
+										   boolean normalize,
+										   boolean simplify,
+										   boolean complete) throws TimeoutException {
+		return MkSAFA(
+				transitions, initialState, finalStates, new HashSet<>(), ba, normalize, simplify, complete
+		);
 	}
 
 	/*
@@ -238,6 +253,10 @@ public class SAFA<P, S> {
 		// to ensure that the states of aut1 and aut2 are disjoint
 		int offSet = aut1.maxStateId + 2;
 
+		BooleanExpressionMorphism<PositiveBooleanExpression> bem = new BooleanExpressionMorphism<>(
+				(x) -> boolExpr.MkState(x + offSet), boolExpr
+		);
+
 		// Copy the moves of aut1 in transitions
 		for (SAFAMove<A, B> t : aut1.getTransitions()) {
 			@SuppressWarnings("unchecked")
@@ -253,17 +272,7 @@ public class SAFA<P, S> {
 
 			newMove.from += offSet;
 
-			if (newMove.to.getStates().size() == 1) {
-				newMove.to = boolExpr.MkState(newMove.to.getStates().iterator().next() + offSet);
-			} else {
-				Iterator<Integer> it = newMove.to.getStates().iterator();
-				BooleanExpressionFactory<PositiveBooleanExpression> p = SAFA.getBooleanExpressionFactory();
-				newMove.to = p.MkAnd(
-						p.MkState(it.next() + offSet),
-						p.MkState(it.next() + offSet)
-				);
-			}
-
+			newMove.to = bem.apply(newMove.to);
 			transitions.add(newMove);
 		}
 
@@ -273,25 +282,8 @@ public class SAFA<P, S> {
 		// Add transitions from new initial state to
 		// the the initial state of aut1 and
 		// the initial state of aut2 shifted by offset
-		PositiveBooleanExpression to1, to2;
-		BooleanExpressionFactory<PositiveBooleanExpression> pb = SAFA.getBooleanExpressionFactory();
-
-		if (aut1.initialState.getStates().size() == 2) {
-			Iterator<Integer> it = aut1.initialState.getStates().iterator();
-			to1 = pb.MkAnd(pb.MkState(it.next()), pb.MkState(it.next()));
-		} else {
-			to1 = pb.MkState(aut1.initialState.getStates().iterator().next());
-		}
-
-		if (aut2.initialState.getStates().size() == 2) {
-			Iterator<Integer> it = aut2.initialState.getStates().iterator();
-			to2 = pb.MkAnd(pb.MkState(it.next() + offSet), pb.MkState(it.next() + offSet));
-		} else {
-			to2 = pb.MkState(aut2.initialState.getStates().iterator().next() + offSet);
-		}
-
-		transitions.add(new SAFAEpsilon<>(initialState, to1));
-		transitions.add(new SAFAEpsilon<>(initialState, to2));
+		transitions.add(new SAFAEpsilon<>(initialState, aut1.initialState));
+		transitions.add(new SAFAEpsilon<>(initialState, bem.apply(aut2.initialState)));
 
 		// Make all states of the two machines final
 		finalStates.addAll(aut1.finalStates);
@@ -333,6 +325,11 @@ public class SAFA<P, S> {
 
 		int offSet = aut1.maxStateId + 1;
 
+		BooleanExpressionFactory<PositiveBooleanExpression> boolExpr = getBooleanExpressionFactory();
+		BooleanExpressionMorphism<PositiveBooleanExpression> bem = new BooleanExpressionMorphism<>(
+				(x) -> boolExpr.MkState(x + offSet), boolExpr
+		);
+
 		for (SAFAMove<A, B> t : aut1.getTransitions()) {
 			transitions.add((SAFAMove<A, B>) t.clone());
 		}
@@ -341,30 +338,13 @@ public class SAFA<P, S> {
 			SAFAMove<A, B> newMove = (SAFAMove<A, B>) t.clone();
 
 			newMove.from += offSet;
-
-			if (newMove.to.getStates().size() == 1) {
-				newMove.to = SAFA.getBooleanExpressionFactory().MkState(newMove.to.getStates().iterator().next() + offSet);
-				transitions.add(newMove);
-			} else if (newMove.to.getStates().size() == 2) {
-				Iterator<Integer> it = newMove.to.getStates().iterator();
-				BooleanExpressionFactory<PositiveBooleanExpression> b = SAFA.getBooleanExpressionFactory();
-				newMove.to = b.MkAnd(b.MkState(it.next() + offSet), b.MkState(it.next() + offSet));
-				transitions.add(newMove);
-			}
+			newMove.to = bem.apply(newMove.to);
+			transitions.add(newMove);
 		}
 
 		for (Integer state1 : aut1.finalStates) {
-			PositiveBooleanExpression toState = aut2.initialState;
-
-			if (toState.getStates().size() == 1) {
-				toState = SAFA.getBooleanExpressionFactory().MkState(toState.getStates().iterator().next() + offSet);
-				transitions.add(new SAFAEpsilon<>(state1, toState));
-			} else if (toState.getStates().size() == 2) {
-				Iterator<Integer> it = toState.getStates().iterator();
-				BooleanExpressionFactory<PositiveBooleanExpression> b = SAFA.getBooleanExpressionFactory();
-				toState = b.MkAnd(b.MkState(it.next() + offSet), b.MkState(it.next() + offSet));
-				transitions.add(new SAFAEpsilon<>(state1, toState));
-			}
+			PositiveBooleanExpression toState = bem.apply(aut2.initialState);
+			transitions.add(new SAFAEpsilon<>(state1, toState));
 		}
 
 		for (Integer state : aut2.finalStates) {
@@ -403,11 +383,8 @@ public class SAFA<P, S> {
 			transitions.add(new SAFAEpsilon<>(finState, initialState));
 
 		// add eps transition from new initial state to old initial state
-		assert aut.initialState.getStates().size() == 1;
-		PositiveBooleanExpression to = SAFA.getBooleanExpressionFactory().MkState(
-				aut.initialState.getStates().iterator().next()
-		);
-		transitions.add(new SAFAEpsilon<>(init, to));
+		assert aut.initialState instanceof PositiveId;
+		transitions.add(new SAFAEpsilon<>(init, aut.initialState));
 
 		// The only final state is the new initial state
 		finalStates.add(init);
@@ -502,8 +479,13 @@ public class SAFA<P, S> {
 	 * @throws TimeoutException
 	 */
 	public boolean accepts(List<S> input, BooleanAlgebra<P, S> ba) throws TimeoutException {
+		if (isEpsilonFree()) {
+			return reverseAccepts(input, ba);
+		}
+
 		/* computation graph nodes */
 		List<Set<Integer>> cgNodes = epsilonClosure(initialState);
+
 		for (S el : input) {
 			cgNodes = getNextState(cgNodes, el, ba);
 			cgNodes = epsilonClosure(cgNodes);
@@ -533,7 +515,7 @@ public class SAFA<P, S> {
 
 				for (SAFAMove<P, S> t : getMovesFrom(state)) {
 					if (!t.isEpsilonTransition() && t.hasModel(inputElement, ba)) {
-						if (t.to.getStates().size() > 1) {
+						if (t.to instanceof PositiveAnd) {
 							List<Set<Integer>> tempCg = new LinkedList<>();
 							tempCg.add(new HashSet<>(t.to.getStates()));
 
@@ -550,8 +532,16 @@ public class SAFA<P, S> {
 									}
 								}
 							}
-						} else {
-							nextState.add(t.to.getStates().iterator().next());
+						} else if (t.to instanceof PositiveOr) {
+							PositiveOr po = (PositiveOr) t.to;
+
+							assert po.left instanceof PositiveId && po.right instanceof PositiveId;
+
+							for (PositiveId pid : Arrays.asList((PositiveId) po.left, (PositiveId) po.right)) {
+								nextState.add(pid.state);
+							}
+						} else if (t.to instanceof PositiveId) {
+							nextState.add(((PositiveId) t.to).state);
 						}
 					}
 				}
@@ -567,7 +557,19 @@ public class SAFA<P, S> {
 
 	private List<Set<Integer>> epsilonClosure(PositiveBooleanExpression state) {
 		List<Set<Integer>> cgNodes = new LinkedList<>();
-		cgNodes.add(state.getStates());
+
+		if (state instanceof PositiveId || state instanceof PositiveAnd
+				|| state instanceof PositiveTrue || state instanceof PositiveFalse) {
+			cgNodes.add(state.getStates());
+		} else if (state instanceof PositiveOr) {
+			PositiveOr po = (PositiveOr) state;
+			cgNodes.add(po.left.getStates());
+			cgNodes.add(po.right.getStates());
+		} else {
+			System.err.println("Unknown PositiveBooleanExpression instance in SAFA.java:epsilonClosure()");
+			System.exit(-1);
+		}
+
 		return epsilonClosure(cgNodes);
 	}
 
@@ -592,17 +594,19 @@ public class SAFA<P, S> {
 					for (SAFAMove<P, S> t : getMovesFrom(curr)) {
 						if (t.isEpsilonTransition()) {
 
-							if (t.to.getStates().size() > 1) {
+							if (t.to instanceof PositiveAnd) {
 								if (recursiveVisited.contains(t)) {
 									continue;
 								}
 								recursiveVisited.add(t);
 
-								assert t.to.getStates().size() == 2;
+								PositiveAnd pa = (PositiveAnd) t.to;
 
 								List<Set<Integer>> tempCg = new LinkedList<>();
-								Iterator<Integer> it = t.to.getStates().iterator();
-								tempCg.add(new HashSet<>(Arrays.asList(it.next(), it.next())));
+								Set<Integer> c = new HashSet<>();
+								c.addAll(pa.left.getStates());
+								c.addAll(pa.right.getStates());
+								tempCg.add(c);
 
 								tempCg = epsilonClosure(tempCg, recursiveVisited);
 
@@ -619,8 +623,20 @@ public class SAFA<P, S> {
 										}
 									}
 								}
-							} else {
-								Integer to = t.to.getStates().iterator().next();
+							} else if (t.to instanceof PositiveOr) {
+								PositiveOr po = (PositiveOr) t.to;
+
+								assert po.left instanceof PositiveId && po.right instanceof PositiveId;
+
+								for (PositiveId pid : Arrays.asList((PositiveId) po.left, (PositiveId) po.right)) {
+									Integer to = pid.state;
+									if (!reached.contains(to)) {
+										reached.add(to);
+										toVisit.add(to);
+									}
+								}
+							} else if (t.to instanceof PositiveId) {
+								Integer to = ((PositiveId) t.to).state;
 								if (!reached.contains(to)) {
 									reached.add(to);
 									toVisit.add(to);
@@ -641,6 +657,38 @@ public class SAFA<P, S> {
 		return updatedCg;
 	}
 
+	/**
+	 * Returns true if the SAFA accepts the input list
+	 *
+	 * @param input
+	 * @param ba
+	 * @return true if accepted false otherwise
+	 * @throws TimeoutException
+	 */
+	public boolean reverseAccepts(List<S> input, BooleanAlgebra<P, S> ba) throws TimeoutException {
+		List<S> revInput = Lists.reverse(input);
+
+		Collection<Integer> currConf = new HashSet<>(finalStates);
+		currConf.addAll(lookaheadFinalStates);
+
+		for (S el : revInput) {
+			currConf = getPrevState(currConf, el, ba);
+		}
+
+		return initialState.hasModel(currConf);
+	}
+
+	private Collection<Integer> getPrevState(Collection<Integer> currState, S inputElement, BooleanAlgebra<P, S> ba) throws TimeoutException {
+		Collection<Integer> prevState = new HashSet<>();
+		for (SAFAInputMove<P, S> t : getInputMoves()) {
+			BooleanExpression b = t.to;
+			if (b.hasModel(currState) && ba.HasModel(t.guard, inputElement))
+				prevState.add(t.from);
+		}
+
+		return prevState;
+	}
+
 	// ------------------------------------------------------
 	// Reachability methods
 	// ------------------------------------------------------
@@ -656,9 +704,8 @@ public class SAFA<P, S> {
 		Collection<Integer> allFinalStates = new HashSet<>(aut.finalStates);
 		allFinalStates.addAll(aut.lookaheadFinalStates);
 
-		HashSet<Integer> initStates = new HashSet<>();
-		assert aut.initialState.getStates().size() == 1;
-		initStates.add(aut.getStates().iterator().next());
+		Set<Integer> initStates = aut.initialState.getStates();
+
 		Collection<Integer> reachableFromInit = aut.getReachableStatesFrom(initStates);
 		Collection<Integer> reachingFinal = aut.getReachingStates(allFinalStates);
 
@@ -677,10 +724,10 @@ public class SAFA<P, S> {
 		for (Integer state : aliveStates)
 			for (SAFAMove<A, B> t : aut.getTransitionsFrom(state)) {
 
-				if (t.to.getStates().size() == 2) {
+				if (t.to instanceof PositiveAnd || t.to instanceof PositiveOr) {
 					transitions.add(t);
-				} else {
-					Integer to = t.to.getStates().iterator().next();
+				} else if (t.to instanceof PositiveId) {
+					Integer to = ((PositiveId) t.to).state;
 					if (aliveStates.contains(to))
 						transitions.add(t);
 				}
@@ -945,7 +992,6 @@ public class SAFA<P, S> {
 					PositiveBooleanExpression c2,
 					BooleanAlgebra<P, S> ba, BooleanExpressionFactory<E> boolexpr, long timeout)
 					throws TimeoutException {
-
 		Timers.setForCongruence();
 		Timers.startFull();
 		Timers.setTimeout(timeout);
@@ -960,6 +1006,7 @@ public class SAFA<P, S> {
 
 		similar.add(leftInitial, rightInitial);
 		worklist.add(new Pair<>(new Pair<>(leftInitial, rightInitial), new LinkedList<>()));
+		int i = 0;
 		while (!worklist.isEmpty()) {
 			Timers.assertFullTO(timeout);
 			Timers.oneMoreState();
@@ -1025,7 +1072,7 @@ public class SAFA<P, S> {
 					// vice versa
 					Timers.stopFull();
 					return new Pair<>(false, succWitness);
-				} else{ 
+				} else{
 					Timers.startSubsumption();
 					if (!similar.isMember(leftSucc, rightSucc)) {
 						if (!similar.add(leftSucc, rightSucc)) {
@@ -1047,6 +1094,7 @@ public class SAFA<P, S> {
 			} while (isSat);
 		}
 		Timers.stopFull();
+
 		return new Pair<>(true, null);
 	}
 
@@ -1194,7 +1242,8 @@ public class SAFA<P, S> {
 
 	/**
 	 * Returns true if the SAFA accepts the input list
-	 * 
+	 List<Set<Integer>> cgNodes = new ArrayList<>();
+	 *
 	 * @param aut
 	 * @param ba
 	 * @return true if accepted false otherwise
@@ -1436,7 +1485,7 @@ public class SAFA<P, S> {
 			System.out.println("Negating SAFA with universal states!");
 		}
 
-		SAFA<P, S> aut = removeEpsilonMovesFrom(this, ba);
+		SAFA<P, S> aut = isEpsilonFree() ? this : removeEpsilonMovesFrom(this, ba);
 
 		Collection<SAFAMove<P, S>> transitions = new ArrayList<>();
 
@@ -1459,14 +1508,14 @@ public class SAFA<P, S> {
 
 		// Negate the set of final states
 		Set<Integer> nonFinal = new HashSet<>();
-		assert initialState.getStates().size() == 1;
-		Integer init = initialState.getStates().iterator().next();
+//		assert initialState.getStates().size() == 1;
+//		Integer init = initialState.getStates().iterator().next();
 		for (int state = 0; state <= aut.maxStateId; state++) {
-			if (state == init && !finalStates.contains(state)) {
-				continue;
-			}
+//			if (state == init && !finalStates.contains(state)) {
+//				continue;
+//			}
 
-			if (!aut.finalStates.contains(state)) {
+			if (!aut.finalStates.contains(state) && !aut.lookaheadFinalStates.contains(state)) {
 				nonFinal.add(state);
 			}
 		}
@@ -1477,10 +1526,21 @@ public class SAFA<P, S> {
 		}
 
 		PositiveBooleanExpression notInitial = demorganize.apply(aut.initialState);
-		return removeDeadOrUnreachableStates(MkSAFA(
+
+		return (MkSAFA(
 				transitions, notInitial, nonFinal, new HashSet<>(),
-				ba, false, false, false), ba
+				ba, false, false, false)
 		);
+	}
+
+	public boolean isEpsilonFree() {
+		for (Integer s : epsilonFrom.keySet()) {
+			if (!epsilonFrom.get(s).isEmpty()) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 /**
@@ -1490,9 +1550,8 @@ public class SAFA<P, S> {
 	@SuppressWarnings("unchecked")
 	public static <A, B> SAFA<A, B> removeEpsilonMovesFrom(SAFA<A, B> aut,
 														   BooleanAlgebra<A, B> ba) throws TimeoutException {
-		assert aut.initialState.getStates().size() == 1;
-		Integer initialState = aut.initialState.getStates().iterator().next();
-		return removeEpsilonMovesFrom(aut, initialState, ba);
+		assert aut.initialState instanceof PositiveId;
+		return removeEpsilonMovesFrom(aut, ((PositiveId) aut.initialState).state, ba);
 	}
 
 	/**
@@ -1527,13 +1586,14 @@ public class SAFA<P, S> {
 
 			for (SAFAMove<A, B> t1 : aut.getTransitionsFrom(currState)) {
 				/* universal states can only have outgoing epsilon transitions given our construction */
-				if (t1.isEpsilonTransition() && t1.to.getStates().size() > 1) {
+
+				if (t1.isEpsilonTransition() && t1.to instanceof PositiveAnd) {
 					Collection<Integer> nextState = new HashSet<>();
 
-					assert t1.to.getStates().size() == 2;
-					Iterator<Integer> it = t1.to.getStates().iterator();
+					PositiveAnd pa = (PositiveAnd) t1.to;
+					assert pa.left instanceof PositiveId && pa.right instanceof PositiveId;
 
-					SAFA<A, B> left = removeEpsilonMovesFrom(aut, it.next(), ba);
+					SAFA<A, B> left = removeEpsilonMovesFrom(aut, ((PositiveId) pa.left).state, ba);
 
 					assert left.initialState.getStates().size() == 1;
 					int leftInit = left.initialState.getStates().iterator().next();
@@ -1544,7 +1604,7 @@ public class SAFA<P, S> {
 					finalStates.addAll(left.finalStates);
 					lookaheadFinalStates.addAll(left.lookaheadFinalStates);
 
-					SAFA<A, B> right = removeEpsilonMovesFrom(aut, it.next(), ba);
+					SAFA<A, B> right = removeEpsilonMovesFrom(aut, ((PositiveId) pa.right).state, ba);
 
 					assert right.initialState.getStates().size() == 1;
 					int rightInit = right.initialState.getStates().iterator().next();
@@ -1570,23 +1630,22 @@ public class SAFA<P, S> {
 
 				} else if (!t1.isEpsilonTransition()) {
 					/* can happen if working with epsilon free safa */
-					if (t1.to.getStates().size() > 1) {
+					if (t1.to instanceof PositiveAnd || t1.to instanceof PositiveOr) {
 						t1.to.getStates().forEach(to -> {
 							reachedStates.put(Collections.singletonList(to), to);
 							toVisitStates.add(Collections.singletonList(to));
 						});
 
 						transitions.add(t1);
-					} else {
-						Integer to = t1.to.getStates().iterator().next();
+					} else if (t1.to instanceof PositiveId) {
+						Integer to = ((PositiveId) t1.to).state;
 						Collection<Integer> nextState = aut.findReachableExistentialStates(to, ba);
 
 						int nextStateId;
 						if (!reachedStates.containsKey(nextState)) {
-							int index = t1.to.getStates().iterator().next();
-							reachedStates.put(nextState, index);
+							reachedStates.put(nextState, to);
 							toVisitStates.add(nextState);
-							nextStateId = index;
+							nextStateId = to;
 						} else {
 							nextStateId = reachedStates.get(nextState);
 						}
@@ -1613,8 +1672,8 @@ public class SAFA<P, S> {
 			}
 		}
 
-//		return removeDeadOrUnreachableStates(MkSAFA(transitions, pb.MkState(initialState), finalStates, ba), ba);
-		return MkSAFA(transitions, pb.MkState(start), finalStates, lookaheadFinalStates, ba);
+//		return removeDeadOrUnreachableStates(MkSAFA(transitions, pb.MkState(start), finalStates, lookaheadFinalStates, ba), ba);
+		return (MkSAFA(transitions, pb.MkState(start), finalStates, lookaheadFinalStates, ba));
 	}
 
 	protected Collection<Integer> findReachableExistentialStates(Integer state, BooleanAlgebra<P, S> ba) {
@@ -1630,8 +1689,8 @@ public class SAFA<P, S> {
 
 		while (toVisit.size() > 0) {
 			for (SAFAMove<P, S> t : getMovesFrom(toVisit.removeFirst())) {
-				if (t.isEpsilonTransition() && t.to.getStates().size() == 1) {
-					Integer to = t.to.getStates().iterator().next();
+				if (t.isEpsilonTransition() && t.to instanceof PositiveId) {
+					Integer to = ((PositiveId) t.to).state;
 					if (!reached.contains(to)) {
 						reached.add(to);
 						toVisit.add(to);
@@ -1780,7 +1839,7 @@ public class SAFA<P, S> {
 		Set<Integer> andNodes = new HashSet<>();
 		for (Integer state : getStates()) {
 			for (SAFAMove<P, S> t : getMovesFrom(state)) {
-				if (t.to.getStates().size() > 1) {
+				if (t.to instanceof PositiveAnd) {
 					andNodes.add(t.from);
 				}
 			}
@@ -2010,7 +2069,7 @@ public class SAFA<P, S> {
 		String s = "";
 		s = "Automaton: " + getTransitionCount() + " transitions, " + stateCount() + " states" + "\n";
 		s += "Transitions \n";
-		for (SAFAInputMove<P, S> t : getInputMoves())
+		for (SAFAMove<P, S> t : getMoves())
 			s = s + t + "\n";
 
 		s += "Initial State \n";
@@ -2019,6 +2078,11 @@ public class SAFA<P, S> {
 		s += "Final States \n";
 		for (Integer fs : finalStates)
 			s = s + fs + "\n";
+
+		s += "Lookahead Final States \n";
+		for (Integer lfs : lookaheadFinalStates)
+			s = s + lfs + "\n";
+
 		return s;
 	}
 

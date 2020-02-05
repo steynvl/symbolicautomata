@@ -67,7 +67,7 @@ public class SAFAInputMove<P,S> extends SAFAMove<P, S> {
 
 	@Override
 	public String toString() {
-		return String.format("S: %s --> %s", from, to);
+		return String.format("S: %s --> %s [%s]", from, to, guard);
 	}
 
 	@Override

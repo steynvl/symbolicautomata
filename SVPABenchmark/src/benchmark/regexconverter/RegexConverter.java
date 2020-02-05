@@ -136,7 +136,11 @@ public class RegexConverter {
 			SAFA<CharPred, Character> lookAhead = toSAFA(cphi.getMyRegex1(), unarySolver, cb);
 
 			lookAhead = SAFA.concatenate(lookAhead, SAFA.star(SAFA.dot(unarySolver), unarySolver), unarySolver);
+			System.out.println(lookAhead.getDot("beforeNegate"));
+			System.out.println(lookAhead);
 			lookAhead = lookAhead.negate(unarySolver);
+			System.out.println(lookAhead.getDot("afterNegate"));
+			System.out.println(lookAhead);
 
 			outputSAFA = SAFA.positiveLookAhead(lookAhead, unarySolver);
 
