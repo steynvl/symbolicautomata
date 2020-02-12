@@ -6,7 +6,7 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 
 @Suite.SuiteClasses({
-    TestSAFAConstruction.class,
+    TestFullMatchSAFA.class,
     TestRegexTranslation.class,
     TestSAFANegation.class,
     TestShuffleOperation.class

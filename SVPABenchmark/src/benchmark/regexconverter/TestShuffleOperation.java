@@ -19,8 +19,6 @@ public class TestShuffleOperation {
         System.out.println(safa2.getDot("safa2"));
 
         SAFA<CharPred, Character> shuffle = SAFA.shuffle(safa1, safa2, solver);
-
-        System.out.println(shuffle.getDot("shuffle"));
     }
 
 }

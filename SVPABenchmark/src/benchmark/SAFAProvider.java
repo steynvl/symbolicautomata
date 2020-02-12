@@ -12,6 +12,18 @@ import java.util.List;
 
 public class SAFAProvider {
 
+    public SAFAProvider(String regex) {
+
+    }
+
+    public SAFA<CharPred, Character> getFullMatchSAFA() {
+        return null;
+    }
+
+    public SAFA<CharPred, Character> getSubMatchSAFA() {
+        return null;
+    }
+
     public SAFAProvider(String regex, UnaryCharIntervalSolver solver){
         String[] str = {regex};
         List<RegexNode> nodes = RegexParserProvider.parse(str);

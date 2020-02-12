@@ -136,11 +136,7 @@ public class RegexConverter {
 			SAFA<CharPred, Character> lookAhead = toSAFA(cphi.getMyRegex1(), unarySolver, cb);
 
 			lookAhead = SAFA.concatenate(lookAhead, SAFA.star(SAFA.dot(unarySolver), unarySolver), unarySolver);
-			System.out.println(lookAhead.getDot("beforeNegate"));
-			System.out.println(lookAhead);
 			lookAhead = lookAhead.negate(unarySolver);
-			System.out.println(lookAhead.getDot("afterNegate"));
-			System.out.println(lookAhead);
 
 			outputSAFA = SAFA.positiveLookAhead(lookAhead, unarySolver);
 
@@ -311,13 +307,13 @@ public class RegexConverter {
 		SFA<CharPred, Character> outputSFA = null;
 
 		if (phi instanceof PositiveLookaheadNode) {
-			System.out.println("Positive lookaheads is not supported in the SFA model!");
+			System.out.println("Positive lookaheads are not supported in the SFA model!");
 			System.exit(3);
 		} else if (phi instanceof NegativeLookaheadNode) {
-			System.out.println("Negative lookaheads is not supported in the SFA model!");
+			System.out.println("Negative lookaheads are not supported in the SFA model!");
 			System.exit(3);
 		} else if (phi instanceof AtomicGroupNode) {
-			System.out.println("Atomic groups is not supported in the SFA model!");
+			System.out.println("Atomic groups are not supported in the SFA model!");
 			System.exit(3);
 		} else if (phi instanceof UnionNode) {
 			// get left SFA and right SFA, union them

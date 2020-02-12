@@ -32,9 +32,9 @@ public class Utils {
         return SAFA.removeEpsilonMovesFrom(constructFromRegex(regex), solver);
     }
 
-    public static void validateRegexInputString(SAFA<CharPred, Character> safa,
-                                                String regex,
-                                                List<String> strings) throws TimeoutException {
+    public static void validateFullMatchRegexInputStrings(SAFA<CharPred, Character> safa,
+                                                          String regex,
+                                                          List<String> strings) throws TimeoutException {
         Pattern pattern = Pattern.compile(regex);
 
         for (String string : strings) {
@@ -48,31 +48,31 @@ public class Utils {
         }
     }
 
-    public static void validateRegexInputString(String regex,
-                                                List<String> strings) throws TimeoutException {
-        validateRegexInputString(constructFromRegex(regex), regex, strings);
+    public static void validateFullMatchRegexInputStrings(String regex,
+                                                          List<String> strings) throws TimeoutException {
+        validateFullMatchRegexInputStrings(constructFromRegex(regex), regex, strings);
     }
 
-    public static void validateRegexInputString(String regex,
-                                                List<String> matching,
-                                                List<String> nonMatching) throws TimeoutException {
+    public static void validateFullMatchRegexInputStrings(String regex,
+                                                          List<String> matching,
+                                                          List<String> nonMatching) throws TimeoutException {
         List<String> strings = new LinkedList<>(matching);
         strings.addAll(nonMatching);
-        validateRegexInputString(constructFromRegex(regex), regex, strings);
+        validateFullMatchRegexInputStrings(constructFromRegex(regex), regex, strings);
     }
 
-    public static void validateRegexConstruction(SAFA<CharPred, Character> safa,
-                                                 int stateCnt, int transitionCnt,
-                                                 int finalStateCnt, int lookaheadCnt) {
+    public static void validateFullMatchRegexConstruction(SAFA<CharPred, Character> safa,
+                                                          int stateCnt, int transitionCnt,
+                                                          int finalStateCnt, int lookaheadCnt) {
         assertEquals(safa.getStates().size(), stateCnt);
         assertEquals((int) safa.getTransitionCount(), transitionCnt);
         assertEquals(safa.getFinalStates().size(), finalStateCnt);
         assertEquals(safa.getLookaheadFinalStates().size(), lookaheadCnt);
     }
 
-    public static void validateRegexConstruction(String regex, int stateCnt, int transitionCnt,
-                                                 int finalStateCnt, int lookaheadCnt) {
-        validateRegexConstruction(constructFromRegex(regex), stateCnt, transitionCnt, finalStateCnt, lookaheadCnt);
+    public static void validateFullMatchRegexConstruction(String regex, int stateCnt, int transitionCnt,
+                                                          int finalStateCnt, int lookaheadCnt) {
+        validateFullMatchRegexConstruction(constructFromRegex(regex), stateCnt, transitionCnt, finalStateCnt, lookaheadCnt);
     }
 
     public static RegexNode parseRegex(String regex) {
