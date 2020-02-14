@@ -2,20 +2,21 @@ package theory.intervals;
 
 import theory.characters.CharPred;
 import theory.characters.StdCharPred;
-import utilities.Quadruple;
 
 public class SubMatchUnaryCharIntervalSolver extends UnaryCharIntervalSolver {
 
     private CharPred redefinedTrue;
 
-    public SubMatchUnaryCharIntervalSolver(Quadruple<Character, Character, Character, Character> capturingBrackets) {
-        super();
+    private Character delimiter;
 
-        CharPred brackets = MkOr(
-                MkOr(new CharPred(capturingBrackets.first), new CharPred(capturingBrackets.second)),
-                MkOr(new CharPred(capturingBrackets.third), new CharPred(capturingBrackets.fourth))
-        );
-        redefinedTrue = MkAnd(StdCharPred.TRUE, MkNot(brackets));
+    public SubMatchUnaryCharIntervalSolver(Character delimiter) {
+        super();
+        this.delimiter = delimiter;
+        redefinedTrue = MkAnd(StdCharPred.TRUE, MkNot(new CharPred(delimiter)));
+    }
+
+    public Character getDelimiter() {
+        return delimiter;
     }
 
     @Override

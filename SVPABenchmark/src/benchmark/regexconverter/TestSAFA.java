@@ -9,7 +9,8 @@ import org.junit.runners.Suite;
     TestFullMatchSAFA.class,
     TestRegexTranslation.class,
     TestSAFANegation.class,
-    TestShuffleOperation.class
+    TestShuffleOperation.class,
+    TestSubMatchSAFA.class
 })
 
 public class TestSAFA { }

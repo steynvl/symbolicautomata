@@ -8,24 +8,17 @@ import theory.characters.CharPred;
 import theory.intervals.SubMatchUnaryCharIntervalSolver;
 import theory.intervals.UnaryCharIntervalSolver;
 import utilities.Pair;
-import utilities.Quadruple;
-
-import java.util.ArrayList;
 import java.util.List;
 
+public class RegexSubMatching {
 
-public class SubMatching {
-
-    /* */
     private SubMatchUnaryCharIntervalSolver solver;
 
-    /* */
     private Pair<Boolean, List<Character>> equivalency;
 
-    /* */
     private String regex1, regex2;
 
-    public SubMatching(String regex1, String regex2) {
+    public RegexSubMatching(String regex1, String regex2) {
         this.regex1 = regex1;
         this.regex2 = regex2;
 
@@ -38,22 +31,47 @@ public class SubMatching {
 
     /* TODO public api methods */
 
+    public static Pair<SAFA<CharPred, Character>, SubMatchUnaryCharIntervalSolver> constructSubMatchingSAFA(String regex) {
+        RegexNode node = Utils.parseRegex(regex);
+
+        Character delimiter = findDelimiterCandidate(node);
+        SubMatchUnaryCharIntervalSolver solver = new SubMatchUnaryCharIntervalSolver(delimiter);
+
+        RegexNode translated = RegexTranslator.translate(node);
+        SAFA<CharPred, Character> safa = null;
+        try {
+            safa = RegexConverter.toSAFA(translated, solver, delimiter);
+            safa = SAFA.concatenate(safa, get(delimiter), solver);
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+        }
+
+        assert safa != null;
+        return new Pair<>(safa, solver);
+    }
+
+    private static SAFA<CharPred, Character> get(Character delimiter) {
+        System.out.println(delimiter + ".*" + " []");
+        return Utils.constructFromRegex(delimiter + ".*");
+    }
+
+    /* TODO public api methods */
+
     private void testForEquivalence() {
         RegexNode node1 = Utils.parseRegex(regex1);
         RegexNode node2 = Utils.parseRegex(regex2);
-        Quadruple<Character, Character, Character, Character> cb = findCapturingCandidates(node1, node2);
+        Character delimiter = findDelimiterCandidate(node1, node2);
 
         /* create custom solver to redefine dot symbol to not match explicit capturing brackets */
-        solver = new SubMatchUnaryCharIntervalSolver(cb);
+        solver = new SubMatchUnaryCharIntervalSolver(delimiter);
 
         RegexNode translated1 = RegexTranslator.translate(node1);
         RegexNode translated2 = RegexTranslator.translate(node2);
 
         try {
             /* construct safa that matches capturing brackets, add as argument to toSAFA method */
-
-            SAFA<CharPred, Character> safa1 = RegexConverter.toSAFA(translated1, solver);
-            SAFA<CharPred, Character> safa2 = RegexConverter.toSAFA(translated2, solver);
+            SAFA<CharPred, Character> safa1 = RegexConverter.toSAFA(translated1, solver, delimiter);
+            SAFA<CharPred, Character> safa2 = RegexConverter.toSAFA(translated2, solver, delimiter);
 
             equivalency = SAFA.isEquivalent(safa1, safa2, solver, SAFA.getBooleanExpressionFactory());
         } catch (TimeoutException e) {
@@ -61,41 +79,40 @@ public class SubMatching {
         }
     }
 
-    private Quadruple<Character, Character, Character, Character> findCapturingCandidates(RegexNode node1,
-                                                                                          RegexNode node2) {
+    private static Character findDelimiterCandidate(RegexNode node1) {
+        return findDelimiterCandidate(node1, null);
+    }
+
+    private static Character findDelimiterCandidate(RegexNode node1,
+                                                    RegexNode node2) {
         UnaryCharIntervalSolver solver = new UnaryCharIntervalSolver();
 
-        CharPred alphabet = solver.MkOr(determineAlphabetOfRegex(node1), determineAlphabetOfRegex(node2));
+        CharPred alphabet = node2 == null ? determineAlphabetOfRegex(node1) :
+                solver.MkOr(determineAlphabetOfRegex(node1), determineAlphabetOfRegex(node2));
+
         CharPred negatedAlphabet = solver.MkNot(alphabet);
 
-        if (!hasFourCandidates(negatedAlphabet)) {
+        if (!hasCandidate(negatedAlphabet)) {
             negatedAlphabet = solver.True();
         }
 
-        List<Character> cb = new ArrayList<>();
-        while (cb.size() != 4) {
-            char c = solver.generateWitness(negatedAlphabet);
-            if (!cb.contains(c)) {
-                cb.add(c);
-            }
-        }
-
-        return new Quadruple<>(cb.get(0), cb.get(1), cb.get(2), cb.get(3));
+        return solver.generateWitness(negatedAlphabet);
     }
 
-    private boolean hasFourCandidates(CharPred cp) {
+    private static boolean hasCandidate(CharPred cp) {
         int candidates = 0;
 
         for (ImmutablePair<Character, Character> interval : cp.intervals) {
             assert interval.getLeft() <= interval.getRight();
             candidates += interval.getRight() - interval.getLeft();
-            if (candidates >= 4) return true;
+            if (candidates >= 1) return true;
         }
 
         return false;
     }
 
-    private CharPred determineAlphabetOfRegex(RegexNode node) {
+    private static CharPred determineAlphabetOfRegex(RegexNode node) {
+        UnaryCharIntervalSolver solver = new UnaryCharIntervalSolver();
         CharPred cp = solver.False();
 
         if (node instanceof UnionNode) {
@@ -104,7 +121,7 @@ public class SubMatching {
             CharPred right = determineAlphabetOfRegex(unionNode.getMyRegex2());
 
             return solver.MkOr(left, right);
-		} else if (node instanceof ConcatenationNode) {
+        } else if (node instanceof ConcatenationNode) {
             ConcatenationNode concatNode = (ConcatenationNode) node;
 
             for (RegexNode n : concatNode.getList()) {
@@ -112,17 +129,17 @@ public class SubMatching {
             }
 
             return cp;
-		} else if (node instanceof DotNode || node instanceof AnchorNode) {
+        } else if (node instanceof DotNode || node instanceof AnchorNode) {
             return cp;
-		} else if (node instanceof StarNode) {
+        } else if (node instanceof StarNode) {
             return solver.MkOr(cp, determineAlphabetOfRegex(((StarNode) node).getMyRegex1()));
-		} else if (node instanceof PlusNode) {
+        } else if (node instanceof PlusNode) {
             return solver.MkOr(cp, determineAlphabetOfRegex(((PlusNode) node).getMyRegex1()));
-		} else if (node instanceof OptionalNode) {
+        } else if (node instanceof OptionalNode) {
             return solver.MkOr(cp, determineAlphabetOfRegex(((OptionalNode) node).getMyRegex1()));
-		} else if (node instanceof PositiveLookaheadNode) {
-                return solver.MkOr(cp, determineAlphabetOfRegex(((PositiveLookaheadNode) node).getMyRegex1()));
-		} else if (node instanceof NegativeLookaheadNode) {
+        } else if (node instanceof PositiveLookaheadNode) {
+            return solver.MkOr(cp, determineAlphabetOfRegex(((PositiveLookaheadNode) node).getMyRegex1()));
+        } else if (node instanceof NegativeLookaheadNode) {
             return solver.MkOr(cp, determineAlphabetOfRegex(((NegativeLookaheadNode) node).getMyRegex1()));
         } else if (node instanceof AtomicGroupNode) {
             return solver.MkOr(cp, determineAlphabetOfRegex(((AtomicGroupNode) node).getMyRegex1()));
@@ -150,14 +167,14 @@ public class SubMatching {
             }
 
             return isNormalCC ? cpIntervals : solver.MkNot(cpIntervals);
-		} else if (node instanceof RepetitionNode) {
+        } else if (node instanceof RepetitionNode) {
             return determineAlphabetOfRegex(((RepetitionNode) node).getMyRegex1());
-		} else if (node instanceof ModifierNode) {
-			throw new UnsupportedOperationException();
-		} else {
-			System.err.println("Wrong instance of node, program will quit");
-			System.exit(-1);
-		}
+        } else if (node instanceof ModifierNode) {
+            throw new UnsupportedOperationException();
+        } else {
+            System.err.println("Wrong instance of node, program will quit");
+            System.exit(-1);
+        }
 
         return cp;
     }

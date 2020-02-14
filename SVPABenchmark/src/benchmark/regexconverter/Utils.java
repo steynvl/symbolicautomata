@@ -21,7 +21,7 @@ public class Utils {
     private static final UnaryCharIntervalSolver solver = new UnaryCharIntervalSolver();
 
     public static SAFA<CharPred, Character> constructFromRegex(String regex) {
-        return new SAFAProvider(regex, solver).getSAFA();
+        return new SAFAProvider(regex).getFullMatchSAFA();
     }
 
     public static SAFA<CharPred, Character> constructFromNode(RegexNode node) throws TimeoutException {
@@ -102,7 +102,7 @@ public class Utils {
     }
 
     public static void printDot(String regex) {
-        System.out.println(new SAFAProvider(regex, solver).getSAFA().getDot("safa"));
+        System.out.println(new SAFAProvider(regex).getFullMatchSAFA().getDot("safa"));
     }
 
     public static void printTransitions(SAFA<CharPred, Character> safa) {
