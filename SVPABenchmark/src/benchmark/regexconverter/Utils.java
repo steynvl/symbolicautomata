@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class Utils {
 
@@ -45,6 +45,17 @@ public class Utils {
 
             System.out.printf("%s [alternating:%b][java:%b]\n", string, safa.accepts(lOfS(string), solver), found);
             assertEquals(found, safa.accepts(lOfS(string), solver));
+        }
+    }
+
+    public static void validateAFAStrings(SAFA<CharPred, Character> safa,
+                                          List<String> matching, List<String> nonMatching) throws TimeoutException {
+        for (String match : matching) {
+            assertTrue(safa.accepts(lOfS(match), solver));
+        }
+
+        for (String nonMatch : nonMatching) {
+            assertFalse(safa.accepts(lOfS(nonMatch), solver));
         }
     }
 

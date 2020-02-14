@@ -10,7 +10,7 @@ public class TestFullMatchSAFA {
     @Test
     public void testConcatAndUnion() throws TimeoutException {
         String regex = "abc|de";
-        Utils.validateFullMatchRegexConstruction(regex, 11, 10, 2, 0);
+        Utils.validateFullMatchRegexConstruction(regex, 12, 12, 1, 0);
         Utils.validateFullMatchRegexInputStrings(regex, Arrays.asList("abc", "de"), Arrays.asList("ab"));
     }
 
@@ -39,7 +39,7 @@ public class TestFullMatchSAFA {
         Utils.validateFullMatchRegexConstruction("[a-zA-Z1-9]", 2, 1, 1, 0);
         Utils.validateFullMatchRegexInputStrings("[a-zA-Z1-9]", Arrays.asList("8", "b", "c", "C"), Arrays.asList("10"));
 
-        Utils.validateFullMatchRegexConstruction("\\a|[b-zA-Z1-9]", 5, 4, 2, 0);
+        Utils.validateFullMatchRegexConstruction("\\a|[b-zA-Z1-9]", 6, 6, 1, 0);
         Utils.validateFullMatchRegexInputStrings("\\a|[b-zA-Z1-9]", Arrays.asList(), Arrays.asList("\\a"));
     }
 
@@ -54,7 +54,7 @@ public class TestFullMatchSAFA {
         Utils.validateFullMatchRegexConstruction("[abc]*", 3, 3, 1, 0);
         Utils.validateFullMatchRegexInputStrings("[abc]*", Arrays.asList("", "aaaa", "abcbcbcbcc"), Arrays.asList("d"));
 
-        Utils.validateFullMatchRegexConstruction("de?|f[abc]?", 13, 12, 4, 0);
+        Utils.validateFullMatchRegexConstruction("de?|f[abc]?", 16, 18, 1, 0);
         Utils.validateFullMatchRegexInputStrings("de?|f[abc]?", Arrays.asList("d", "de", "fa", "f"), Arrays.asList("def"));
     }
 
@@ -119,6 +119,7 @@ public class TestFullMatchSAFA {
 
     @Test
     public void testNegativeLookaheads() throws TimeoutException {
+        System.out.println(Utils.constructFromRegex("(?!aa)..").getDot("aaa"));
         Utils.validateFullMatchRegexInputStrings("(?!aa)..", Arrays.asList("ab", "ba", "bb"), Arrays.asList("aa"));
         Utils.validateFullMatchRegexInputStrings("a(?!b).", Arrays.asList("ad", "ac"), Arrays.asList("ab"));
         Utils.validateFullMatchRegexInputStrings("([ab]*)(?!b)c", Arrays.asList("abc"), Arrays.asList());
