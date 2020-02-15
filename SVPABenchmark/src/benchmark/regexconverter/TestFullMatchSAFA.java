@@ -59,6 +59,15 @@ public class TestFullMatchSAFA {
     }
 
     @Test
+    public void testRepetition() throws TimeoutException {
+        Utils.validateFullMatchRegexInputStrings("[\\d]{2}", Arrays.asList("1", "11"));
+        Utils.validateFullMatchRegexInputStrings("a{2,}", Arrays.asList("a", "aa", "aaa", "aaaa", "aaaaaaaa"));
+        Utils.validateFullMatchRegexInputStrings("1{2,3}", Arrays.asList("1", "11", "111", "1111", "1111111"));
+        Utils.validateFullMatchRegexInputStrings(".{1,3}", Arrays.asList("1", "12", "123", "1234", ""));
+        Utils.validateFullMatchRegexInputStrings(".{4}", Arrays.asList("1", "12", "123", "1234", "12345", ""));
+    }
+
+    @Test
     public void testPositiveLookaheads() throws TimeoutException {
         Utils.validateFullMatchRegexConstruction("EB(?=AA)AAA", 19, 18, 1, 1);
         Utils.validateFullMatchRegexInputStrings("EB(?=AA)AAA", Arrays.asList("EBAAA"), Arrays.asList("EBAA"));
@@ -114,12 +123,10 @@ public class TestFullMatchSAFA {
         Utils.validateFullMatchRegexInputStrings("(?=a(?=bc))...", Arrays.asList("abc"), Arrays.asList());
         Utils.validateFullMatchRegexInputStrings("(?=a(?=b)b)...", Arrays.asList("abc"), Arrays.asList());
         Utils.validateFullMatchRegexInputStrings("(?=a(?=b)c)...", Arrays.asList(), Arrays.asList("abc"));
-
     }
 
     @Test
     public void testNegativeLookaheads() throws TimeoutException {
-        System.out.println(Utils.constructFromRegex("(?!aa)..").getDot("aaa"));
         Utils.validateFullMatchRegexInputStrings("(?!aa)..", Arrays.asList("ab", "ba", "bb"), Arrays.asList("aa"));
         Utils.validateFullMatchRegexInputStrings("a(?!b).", Arrays.asList("ad", "ac"), Arrays.asList("ab"));
         Utils.validateFullMatchRegexInputStrings("([ab]*)(?!b)c", Arrays.asList("abc"), Arrays.asList());
@@ -128,6 +135,10 @@ public class TestFullMatchSAFA {
         Utils.validateFullMatchRegexInputStrings("\\/\\*((?!\\/\\*).)*\\*\\/", Arrays.asList(
                 "/* */", "/   */", "/*  /* */ */", "/* this is a comment */", "/* *", "/**/"
         ));
+
+        Utils.validateFullMatchRegexInputStrings("((?!(ab)).)*", Arrays.asList("ab", "ba", "qw", "", "a", "b"));
+        Utils.validateFullMatchRegexInputStrings("((?!(ab)).)ab*", Arrays.asList("ab", "ba", "qw", "", "a", "b"));
+        Utils.validateFullMatchRegexInputStrings("(?=.*)(?=.*)(.{4}).*", Arrays.asList("1234", "12345", "123"));
     }
 
     @Test

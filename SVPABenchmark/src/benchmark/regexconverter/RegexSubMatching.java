@@ -1,14 +1,19 @@
 package benchmark.regexconverter;
 
 import RegexParser.*;
+import automata.safa.BooleanExpressionFactory;
 import automata.safa.SAFA;
+import automata.safa.SAFAInputMove;
+import automata.safa.SAFAMove;
+import automata.safa.booleanexpression.PositiveBooleanExpression;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
 import theory.intervals.SubMatchUnaryCharIntervalSolver;
 import theory.intervals.UnaryCharIntervalSolver;
 import utilities.Pair;
-import java.util.List;
+
+import java.util.*;
 
 public class RegexSubMatching {
 
@@ -31,28 +36,30 @@ public class RegexSubMatching {
 
     /* TODO public api methods */
 
-    public static Pair<SAFA<CharPred, Character>, SubMatchUnaryCharIntervalSolver> constructSubMatchingSAFA(String regex) {
+    public static Pair<SAFA<CharPred, Character>, SubMatchUnaryCharIntervalSolver> constructSubMatchingSAFA(String regex) throws TimeoutException {
         RegexNode node = Utils.parseRegex(regex);
 
         Character delimiter = findDelimiterCandidate(node);
         SubMatchUnaryCharIntervalSolver solver = new SubMatchUnaryCharIntervalSolver(delimiter);
 
         RegexNode translated = RegexTranslator.translate(node);
-        SAFA<CharPred, Character> safa = null;
-        try {
-            safa = RegexConverter.toSAFA(translated, solver, delimiter);
-            safa = SAFA.concatenate(safa, get(delimiter), solver);
-        } catch (TimeoutException e) {
-            e.printStackTrace();
-        }
+        SAFA<CharPred, Character> safa = RegexConverter.toSAFA(translated, solver, delimiter);
+        safa = SAFA.concatenate(safa, buildRemainder(delimiter, solver), solver);
 
-        assert safa != null;
         return new Pair<>(safa, solver);
     }
 
-    private static SAFA<CharPred, Character> get(Character delimiter) {
-        System.out.println(delimiter + ".*" + " []");
-        return Utils.constructFromRegex(delimiter + ".*");
+    private static SAFA<CharPred, Character> buildRemainder(Character delimiter,
+                                                            SubMatchUnaryCharIntervalSolver solver) throws TimeoutException {
+        BooleanExpressionFactory<PositiveBooleanExpression> boolExpr = SAFA.getBooleanExpressionFactory();
+        Collection<SAFAMove<CharPred, Character>> transitions = new LinkedList<>();
+        transitions.add(new SAFAInputMove<>(0, boolExpr.MkState(1), new CharPred(delimiter)));
+
+        SAFA<CharPred, Character> dem = SAFA.MkSAFA(
+                transitions, boolExpr.MkState(0), Arrays.asList(1), new ArrayList<>(), solver
+        );
+
+        return SAFA.concatenate(dem, SAFA.star(SAFA.dot(solver), solver), solver);
     }
 
     /* TODO public api methods */

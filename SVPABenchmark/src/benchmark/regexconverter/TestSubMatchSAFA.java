@@ -1,6 +1,7 @@
 package benchmark.regexconverter;
 
 import automata.safa.SAFA;
+import benchmark.SAFAProvider;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
@@ -16,29 +17,47 @@ import static org.junit.Assert.*;
 
 public class TestSubMatchSAFA {
 
-    private Pair<SAFA<CharPred, Character>, SubMatchUnaryCharIntervalSolver> pair;
+    @Test
+    public void testLookaheads01() throws TimeoutException {
+        List<Pair<String, List<String>>> tests = Arrays.asList(
+                new Pair<>("(?=aa)a", Arrays.asList("a", "aa", "aaa", "aaaa", "aaaaa")),
+                new Pair<>("(?=aaa)aa", Arrays.asList("a", "aa", "aaa", "aaaa", "aaaaa")),
+                new Pair<>("EB(?=AA)AAA", Arrays.asList("EBAA", "EBAAA")),
+                new Pair<>("EB(?=AAAA)AAA", Arrays.asList("EBAA", "EBAAA", "EBAAAA", "EBAAAAA", "EBAAAB")),
+                new Pair<>("(a(?=kl+)|qw*x)kl", Arrays.asList("akl", "qxkl", "qwxkl", "qwxkl", "akll"))
+//                new Pair<>("", Arrays.asList("", "", "", "", "")),
+//                new Pair<>("", Arrays.asList("", "", "", "", "")),
+//                new Pair<>("", Arrays.asList("", "", "", "", "")),
+//                new Pair<>("", Arrays.asList("", "", "", "", "")),
+//                new Pair<>("", Arrays.asList("", "", "", "", "")),
+//                new Pair<>("", Arrays.asList("", "", "", "", "")),
+//                new Pair<>("", Arrays.asList("", "", "", "", "")),
+        );
+
+        validateTests(tests);
+    }
 
     @Test
-    public void testSubMatchSAFA01() throws TimeoutException {
-//        pair = RegexSubMatching.constructSubMatchingSAFA("a|aa");
-        pair = RegexSubMatching.constructSubMatchingSAFA("(?=aaa)aa");
+    public void testLookaheads02() throws TimeoutException {
+        assertTrue(true);
+    }
 
-        SAFA<CharPred, Character> safa = pair.first;
-        SubMatchUnaryCharIntervalSolver solver = pair.second;
-
-        System.out.println(safa.getDot("safa"));
-        System.out.println("delimiter = " + solver.getDelimiter());
-        System.out.println(solver.HasModel(solver.True(), 'a'));
-        System.out.println(solver.HasModel(solver.True(), solver.getDelimiter()));
-
-        validateStrings("(?=aaa)aa", safa, solver, Arrays.asList("aa", "aaa"));
-
+    private void validateTests(List<Pair<String, List<String>>> tests) throws TimeoutException {
+        for (Pair<String, List<String>> test : tests) {
+            String regex = test.first;
+            SAFAProvider safaProvider = new SAFAProvider(regex);
+            validateStrings(
+                    regex, safaProvider.getSubMatchSAFA(),
+                    safaProvider.getSubMatchSolver(), test.second
+            );
+        }
     }
 
     private void validateStrings(String regex,
                                  SAFA<CharPred, Character> safa,
                                  SubMatchUnaryCharIntervalSolver solver,
                                  List<String> strings) throws TimeoutException {
+        /* compile regex to java.util.regex.Pattern to test our model against */
         Pattern pattern = Pattern.compile(regex);
 
         for (String string : strings) {
@@ -48,10 +67,14 @@ public class TestSubMatchSAFA {
             if (matcher.find()) {
                 stringWithDelimiter = String.format("%s%s%s", matcher.group(0), solver.getDelimiter(),
                         string.substring(matcher.group(0).length()));
-                assertTrue(safa.accepts(Utils.lOfS(stringWithDelimiter), solver));
+                boolean accepts = safa.accepts(Utils.lOfS(stringWithDelimiter), solver);
+                System.out.printf("%s [alternating:%b][java:true]\n", stringWithDelimiter, accepts);
+                assertTrue(accepts);
             } else {
                 stringWithDelimiter = string + solver.getDelimiter();
-                assertFalse(safa.accepts(Utils.lOfS(stringWithDelimiter), solver));
+                boolean accepts = safa.accepts(Utils.lOfS(stringWithDelimiter), solver);
+                System.out.printf("%s [alternating:%b][java:false]\n", stringWithDelimiter, accepts);
+                assertFalse(accepts);
             }
 
         }

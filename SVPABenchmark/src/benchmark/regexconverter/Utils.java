@@ -20,16 +20,16 @@ public class Utils {
 
     private static final UnaryCharIntervalSolver solver = new UnaryCharIntervalSolver();
 
-    public static SAFA<CharPred, Character> constructFromRegex(String regex) {
+    public static SAFA<CharPred, Character> constructFullMatchFromRegex(String regex) {
         return new SAFAProvider(regex).getFullMatchSAFA();
     }
 
-    public static SAFA<CharPred, Character> constructFromNode(RegexNode node) throws TimeoutException {
+    public static SAFA<CharPred, Character> constructFullMatchFromNode(RegexNode node) throws TimeoutException {
         return RegexConverter.toSAFA(node, new UnaryCharIntervalSolver());
     }
 
     public static SAFA<CharPred, Character> constructEpsilonFree(String regex) throws TimeoutException {
-        return SAFA.removeEpsilonMovesFrom(constructFromRegex(regex), solver);
+        return SAFA.removeEpsilonMovesFrom(constructFullMatchFromRegex(regex), solver);
     }
 
     public static void validateFullMatchRegexInputStrings(SAFA<CharPred, Character> safa,
@@ -48,20 +48,9 @@ public class Utils {
         }
     }
 
-    public static void validateAFAStrings(SAFA<CharPred, Character> safa,
-                                          List<String> matching, List<String> nonMatching) throws TimeoutException {
-        for (String match : matching) {
-            assertTrue(safa.accepts(lOfS(match), solver));
-        }
-
-        for (String nonMatch : nonMatching) {
-            assertFalse(safa.accepts(lOfS(nonMatch), solver));
-        }
-    }
-
     public static void validateFullMatchRegexInputStrings(String regex,
                                                           List<String> strings) throws TimeoutException {
-        validateFullMatchRegexInputStrings(constructFromRegex(regex), regex, strings);
+        validateFullMatchRegexInputStrings(constructFullMatchFromRegex(regex), regex, strings);
     }
 
     public static void validateFullMatchRegexInputStrings(String regex,
@@ -69,7 +58,7 @@ public class Utils {
                                                           List<String> nonMatching) throws TimeoutException {
         List<String> strings = new LinkedList<>(matching);
         strings.addAll(nonMatching);
-        validateFullMatchRegexInputStrings(constructFromRegex(regex), regex, strings);
+        validateFullMatchRegexInputStrings(constructFullMatchFromRegex(regex), regex, strings);
     }
 
     public static void validateFullMatchRegexConstruction(SAFA<CharPred, Character> safa,
@@ -83,7 +72,7 @@ public class Utils {
 
     public static void validateFullMatchRegexConstruction(String regex, int stateCnt, int transitionCnt,
                                                           int finalStateCnt, int lookaheadCnt) {
-        validateFullMatchRegexConstruction(constructFromRegex(regex), stateCnt, transitionCnt, finalStateCnt, lookaheadCnt);
+        validateFullMatchRegexConstruction(constructFullMatchFromRegex(regex), stateCnt, transitionCnt, finalStateCnt, lookaheadCnt);
     }
 
     public static RegexNode parseRegex(String regex) {

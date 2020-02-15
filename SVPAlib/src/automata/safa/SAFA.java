@@ -1151,9 +1151,9 @@ public class SAFA<P, S> {
      * Complexity: quadratic in number of states (if already deterministic).
      */
     public static <P, S> SAFA<P, S> shuffle(SAFA<P, S> aut1, SAFA<P, S> aut2, BooleanAlgebra<P, S> ba) throws TimeoutException {
-        if (aut1.getLookaheadFinalStates().size() > 0 || aut1.getTransitions().stream().anyMatch(t -> t.to.getStates().size() > 1)) {
+        if (aut1.getLookaheadFinalStates().size() > 0 || aut1.getTransitions().stream().anyMatch(t -> t.to instanceof PositiveAnd)) {
             throw new UnsupportedOperationException("AFA with universal states not supported for shuffle operation!");
-        } else if (aut2.getLookaheadFinalStates().size() > 0 || aut2.getTransitions().stream().anyMatch(t -> t.to.getStates().size() > 1)) {
+        } else if (aut2.getLookaheadFinalStates().size() > 0 || aut2.getTransitions().stream().anyMatch(t -> t.to instanceof PositiveAnd)) {
             throw new UnsupportedOperationException("AFA with universal states not supported for shuffle operation!");
         }
 
@@ -1185,17 +1185,21 @@ public class SAFA<P, S> {
 
             List<SAFAMove<P, S>> t1 = transitions1.get(p.s1);
             for (int i = 0; i < t1.size(); i++) {
-                StatePair q = new StatePair(getState(t1.get(i).to), p.s2);
-                StatePair r = newStates.get(q);
 
-                if (r == null) {
-                    q.s = SAFA.getBooleanExpressionFactory().MkState(++maxStateId);
-                    worklist.add(q);
-                    newStates.put(q, q);
-                    r = q;
+                for (Integer to : t1.get(i).to.getStates()) {
+                    StatePair q = new StatePair(to, p.s2);
+                    StatePair r = newStates.get(q);
+
+                    if (r == null) {
+                        q.s = SAFA.getBooleanExpressionFactory().MkState(++maxStateId);
+                        worklist.add(q);
+                        newStates.put(q, q);
+                        r = q;
+                    }
+
+                    transitions.add(new SAFAInputMove<>(getState(p.s), r.s, t1.get(i).guard));
                 }
 
-                transitions.add(new SAFAInputMove<>(getState(p.s), r.s, t1.get(i).guard));
             }
 
             List<SAFAMove<P, S>> t2 = transitions2.get(p.s2);
@@ -1222,7 +1226,7 @@ public class SAFA<P, S> {
         Map<Integer, List<SAFAMove<P, S>>> sortedTransitions = new HashMap<>();
         for (Integer s : states) {
             List<SAFAMove<P, S>> moves = new ArrayList<>(safa.getTransitionsFrom(s));
-            moves.sort(Comparator.comparingInt(m -> getState(m.to)));
+            moves.sort(Comparator.comparingInt(m -> m.from));
 
             assert !sortedTransitions.containsKey(s);
             sortedTransitions.put(s, moves);

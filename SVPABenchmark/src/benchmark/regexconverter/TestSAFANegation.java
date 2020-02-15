@@ -31,7 +31,7 @@ public class TestSAFANegation {
         String regex = "a(?!b(?!c))..";
         List<String> strings = Arrays.asList("abc", "abd", "acd");
 
-        Utils.validateFullMatchRegexInputStrings(Utils.constructFromRegex(regex), regex, strings);
+        Utils.validateFullMatchRegexInputStrings(Utils.constructFullMatchFromRegex(regex), regex, strings);
 
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
         Utils.validateFullMatchRegexInputStrings(noEps, regex, strings);
@@ -42,7 +42,7 @@ public class TestSAFANegation {
         String regex = "a|(?!a)aa";
         List<String> strings = Arrays.asList("a", "aa", "aaa");
 
-        Utils.validateFullMatchRegexInputStrings(Utils.constructFromRegex(regex), regex, strings);
+        Utils.validateFullMatchRegexInputStrings(Utils.constructFullMatchFromRegex(regex), regex, strings);
 
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
         Utils.validateFullMatchRegexInputStrings(noEps, regex, strings);
@@ -53,7 +53,7 @@ public class TestSAFANegation {
         String regex = "aa|(?!aa)a";
         List<String> strings = Arrays.asList("a", "aa", "aaa");
 
-        Utils.validateFullMatchRegexInputStrings(Utils.constructFromRegex(regex), regex, strings);
+        Utils.validateFullMatchRegexInputStrings(Utils.constructFullMatchFromRegex(regex), regex, strings);
 
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
         Utils.validateFullMatchRegexInputStrings(noEps, regex, strings);
@@ -64,7 +64,7 @@ public class TestSAFANegation {
         String regex = "(?!aa)..";
         List<String> strings = Arrays.asList("a", "aa", "aaa", "ab", "ba");
 
-        Utils.validateFullMatchRegexInputStrings(Utils.constructFromRegex(regex), regex, strings);
+        Utils.validateFullMatchRegexInputStrings(Utils.constructFullMatchFromRegex(regex), regex, strings);
 
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
         Utils.validateFullMatchRegexInputStrings(noEps, regex, strings);
@@ -75,7 +75,7 @@ public class TestSAFANegation {
         String regex = "a(?!b).";
         List<String> strings = Arrays.asList("ad", "ab", "ac");
 
-        Utils.validateFullMatchRegexInputStrings(Utils.constructFromRegex(regex), regex, strings);
+        Utils.validateFullMatchRegexInputStrings(Utils.constructFullMatchFromRegex(regex), regex, strings);
 
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
         Utils.validateFullMatchRegexInputStrings(noEps, regex, strings);
@@ -86,7 +86,7 @@ public class TestSAFANegation {
         String regex = "([ab]*)(?!b)c";
         List<String> strings = Arrays.asList("abc");
 
-        Utils.validateFullMatchRegexInputStrings(Utils.constructFromRegex(regex), regex, strings);
+        Utils.validateFullMatchRegexInputStrings(Utils.constructFullMatchFromRegex(regex), regex, strings);
 
         SAFA<CharPred, Character> noEps = Utils.constructEpsilonFree(regex);
 

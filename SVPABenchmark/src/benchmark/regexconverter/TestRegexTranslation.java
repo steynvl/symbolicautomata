@@ -132,7 +132,7 @@ public class TestRegexTranslation {
         String regex = "a|aa";
 
         RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
-        SAFA<CharPred, Character> safa = Utils.constructFromNode(translated);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
 
         List<String> strings = Arrays.asList("", "a", "aa");
         Utils.validateFullMatchRegexInputStrings(safa, "a|(?!a)aa", strings);
@@ -143,7 +143,7 @@ public class TestRegexTranslation {
         String regex = "aa|a";
 
         RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
-        SAFA<CharPred, Character> safa = Utils.constructFromNode(translated);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
 
         List<String> strings = Arrays.asList("", "a", "aa");
         Utils.validateFullMatchRegexInputStrings(safa, "aa|(?!aa)a", strings);
@@ -156,7 +156,7 @@ public class TestRegexTranslation {
 
         RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
 
-        SAFA<CharPred, Character> safa = Utils.constructFromNode(translated);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
 
         List<String> strings = Arrays.asList("b", "ab", "aab", "abb");
         Utils.validateFullMatchRegexInputStrings(safa, java, strings);
@@ -169,7 +169,7 @@ public class TestRegexTranslation {
 
         RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
 
-        SAFA<CharPred, Character> safa = Utils.constructFromNode(translated);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
 
         List<String> strings = Arrays.asList("", "b", "ab", "aab", "abb");
         Utils.validateFullMatchRegexInputStrings(safa, java, strings);
@@ -181,7 +181,7 @@ public class TestRegexTranslation {
         String java = String.format("(?>%s)", regex);
 
         RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
-        SAFA<CharPred, Character> safa = Utils.constructFromNode(translated);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
 
         List<String> strings = Arrays.asList("", "b", "ab", "aab", "abb");
         Utils.validateFullMatchRegexInputStrings(safa, java, strings);
@@ -193,7 +193,7 @@ public class TestRegexTranslation {
         String java = String.format("(?>%s)", regex);
 
         RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
-        SAFA<CharPred, Character> safa = Utils.constructFromNode(translated);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
 
         List<String> strings = Arrays.asList("", "b", "ab", "aab", "abb");
         Utils.validateFullMatchRegexInputStrings(safa, java, strings);
@@ -202,7 +202,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator01() throws TimeoutException {
         String regex = "a(?>bc|b)c";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("abc");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -211,7 +211,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator02() throws TimeoutException {
         String regex = "(?>a*)";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("a", "aa");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -220,7 +220,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator03() throws TimeoutException {
         String regex = "(?>\\s*(\\S\\S*\\s*))(\\s\\s*\\S\\S*)";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("", "  aaa  aaa");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -229,7 +229,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator04() throws TimeoutException {
         String regex = "(?>\\s*(\\S\\S*\\s*))(\\s\\s*\\S\\S*)";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("", "  aaa  aaa");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -238,7 +238,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator05() throws TimeoutException {
         String regex = "(?>n|n1)@gmail\\.com";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("n@gmail.com", "n1@gmail.com");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -247,7 +247,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator06() throws TimeoutException {
         String regex = "a(?>bc|b)c";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("abc");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -256,7 +256,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator07() throws TimeoutException {
         String regex = "(?>\\W\\w*):";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("abc:", "", "a:", "2:", "1");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -264,7 +264,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator08() throws TimeoutException {
         String regex = "(?>(\"|[^\"])*)";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("aa\"", "", "a:", "\"\"\"", "2:");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -272,7 +272,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator09() throws TimeoutException {
         String regex = "(\\.\\d\\d(?>[1-9]?))\\d+";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList(".625", ".625000");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -281,7 +281,7 @@ public class TestRegexTranslation {
     public void testAtomicOperator10() throws TimeoutException {
         /* TODO fix, the optional operator seems to be breaking it! */
 //        String regex = "[a-z0-9]+(?>_[a-z0-9]+)?";
-//        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+//        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 //
 //        List<String> strings = Arrays.asList("", "azaaz", "a10ask_a");
 //        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -289,7 +289,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator11() throws TimeoutException {
         String regex = "(?>a*(b*a*)(a*b*))";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("abab");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -298,7 +298,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator12() throws TimeoutException {
         String regex = "(?>((a|b)*)*)b";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("", "ab", "aab", "b");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -307,7 +307,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator13() throws TimeoutException {
         String regex = "(?>(a|b)*)*b";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("", "ab", "aab", "b");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
@@ -316,7 +316,7 @@ public class TestRegexTranslation {
     @Test
     public void testAtomicOperator14() throws TimeoutException {
         String regex = "(?>(\\.|[^\"])*)";
-        SAFA<CharPred, Character> safa = Utils.constructFromRegex(regex);
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("a", "b", "aababab", "\"", "aababa\"");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
