@@ -873,17 +873,24 @@ public class SAFA<P, S> {
 
                 for (Integer s : states) {
                     E succ = boolexpr.False();
-                    for (SAFAInputMove<P, S> tr : aut.getInputMovesFrom(s)) {
+//                    for (SAFAInputMove<P, S> tr : aut.getInputMovesFrom(s)) {
+                    for (SAFAMove<P, S> tr : aut.getMovesFrom(s)) {
                         Timers.assertFullTO(timeout);
 
                         Timers.startSolver();
-                        boolean hm = ba.HasModel(tr.guard, model);
+                        boolean hm = tr.isEpsilonTransition() || ba.HasModel(tr.guard, model);
                         Timers.stopSolver();
 
                         if (hm) {
                             succ = boolexpr.MkOr(succ, coerce.apply(tr.to));
                             Timers.startSolver();
-                            implicant = ba.MkAnd(implicant, tr.guard);
+
+                            if (tr.isEpsilonTransition()) {
+                                // implicant = ba.MkAnd(implicant, ba.True());
+                            } else {
+                                implicant = ba.MkAnd(implicant, tr.guard);
+                            }
+
                             Timers.stopSolver();
                         } else {
                             Timers.startSolver();

@@ -22,8 +22,8 @@ public class TestSubMatchSAFA {
         List<Pair<String, List<String>>> tests = Arrays.asList(
             new Pair<>("a|aa", Arrays.asList("a", "aa")),
             new Pair<>("aa|a", Arrays.asList("a", "aa")),
-            new Pair<>("a*(b|abb)", Arrays.asList("ab", "b", "abb")),
-            new Pair<>("a*(abb|b)", Arrays.asList("ab", "b", "abb")),
+            new Pair<>("a*(b|abb)", Arrays.asList("ab", "b", "abb", "aabb")),
+            new Pair<>("a*(abb|b)", Arrays.asList("ab", "b", "abb", "aabb")),
             new Pair<>("a*b|abb", Arrays.asList("ab", "abb")),
             new Pair<>("a|ab", Arrays.asList("a", "ab")),
             new Pair<>("a*(ab)*b", Arrays.asList("a", "ab", "abb", "aaab")),

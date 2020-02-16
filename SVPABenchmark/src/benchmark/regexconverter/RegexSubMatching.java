@@ -23,6 +23,8 @@ public class RegexSubMatching {
 
     private String regex1, regex2;
 
+    private SAFA<CharPred, Character> safa1, safa2;
+
     public RegexSubMatching(String regex1, String regex2) {
         this.regex1 = regex1;
         this.regex2 = regex2;
@@ -30,11 +32,25 @@ public class RegexSubMatching {
         testForEquivalence();
     }
 
+    public Pair<Boolean, List<Character>> getEquivalencyPair() {
+        return equivalency;
+    }
+
     public boolean isEquivalent() {
         return equivalency.first;
     }
 
-    /* TODO public api methods */
+    public SAFA<CharPred, Character> getSAFA01() {
+        return safa1;
+    }
+
+    public SAFA<CharPred, Character> getSAFA02() {
+        return safa2;
+    }
+
+    public SubMatchUnaryCharIntervalSolver getSolver() {
+        return solver;
+    }
 
     public static Pair<SAFA<CharPred, Character>, SubMatchUnaryCharIntervalSolver> constructSubMatchingSAFA(String regex) throws TimeoutException {
         RegexNode node = Utils.parseRegex(regex);
@@ -62,8 +78,6 @@ public class RegexSubMatching {
         return SAFA.concatenate(dem, SAFA.star(SAFA.dot(solver), solver), solver);
     }
 
-    /* TODO public api methods */
-
     private void testForEquivalence() {
         RegexNode node1 = Utils.parseRegex(regex1);
         RegexNode node2 = Utils.parseRegex(regex2);
@@ -78,13 +92,15 @@ public class RegexSubMatching {
         try {
             SAFA<CharPred, Character> remainder = buildRemainder(delimiter, solver);
 
-            SAFA<CharPred, Character> safa1 = RegexConverter.toSAFA(translated1, solver, delimiter);
+            safa1 = RegexConverter.toSAFA(translated1, solver, delimiter);
             safa1 = SAFA.concatenate(safa1, remainder, solver);
 
-            SAFA<CharPred, Character> safa2 = RegexConverter.toSAFA(translated2, solver, delimiter);
+            safa2 = RegexConverter.toSAFA(translated2, solver, delimiter);
             safa2 = SAFA.concatenate(safa2, remainder, solver);
 
-            equivalency = SAFA.isEquivalent(safa1, safa2, solver, SAFA.getBooleanExpressionFactory());
+            equivalency = SAFA.isEquivalent(
+                    safa1, safa2, new UnaryCharIntervalSolver(), SAFA.getBooleanExpressionFactory()
+            );
         } catch (TimeoutException e) {
             /* TODO */
         }
