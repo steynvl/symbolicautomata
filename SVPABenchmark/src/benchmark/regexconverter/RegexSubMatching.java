@@ -76,9 +76,13 @@ public class RegexSubMatching {
         RegexNode translated2 = RegexTranslator.translate(node2);
 
         try {
-            /* construct safa that matches capturing brackets, add as argument to toSAFA method */
+            SAFA<CharPred, Character> remainder = buildRemainder(delimiter, solver);
+
             SAFA<CharPred, Character> safa1 = RegexConverter.toSAFA(translated1, solver, delimiter);
+            safa1 = SAFA.concatenate(safa1, remainder, solver);
+
             SAFA<CharPred, Character> safa2 = RegexConverter.toSAFA(translated2, solver, delimiter);
+            safa2 = SAFA.concatenate(safa2, remainder, solver);
 
             equivalency = SAFA.isEquivalent(safa1, safa2, solver, SAFA.getBooleanExpressionFactory());
         } catch (TimeoutException e) {

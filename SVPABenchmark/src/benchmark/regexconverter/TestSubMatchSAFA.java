@@ -18,20 +18,42 @@ import static org.junit.Assert.*;
 public class TestSubMatchSAFA {
 
     @Test
+    public void testSubMatchingSAFA01() throws TimeoutException {
+        List<Pair<String, List<String>>> tests = Arrays.asList(
+            new Pair<>("a|aa", Arrays.asList("a", "aa")),
+            new Pair<>("aa|a", Arrays.asList("a", "aa")),
+            new Pair<>("a*(b|abb)", Arrays.asList("ab", "b", "abb")),
+            new Pair<>("a*(abb|b)", Arrays.asList("ab", "b", "abb")),
+            new Pair<>("a*b|abb", Arrays.asList("ab", "abb")),
+            new Pair<>("a|ab", Arrays.asList("a", "ab")),
+            new Pair<>("a*(ab)*b", Arrays.asList("a", "ab", "abb", "aaab")),
+            new Pair<>("abb|a*(ab)*b", Arrays.asList("a", "ab", "abb", "aaab")),
+            new Pair<>("a|ab", Arrays.asList("a", "ab"))
+        );
+
+        validateTests(tests);
+    }
+
+    @Test
+    public void testSubMatchingSAFA02() throws TimeoutException {
+        List<Pair<String, List<String>>> tests = Arrays.asList(
+                new Pair<>("^((a*)*b)*b", Arrays.asList("a", "ab", "abb", "aabb", "ababb")),
+                new Pair<>("^(b|(a|b)*bb)", Arrays.asList("b", "abb", "bbb", "aabbb")),
+                new Pair<>("ba((?!ab))*", Arrays.asList("baab", "baaab", "baqweab"))
+        );
+
+        validateTests(tests);
+    }
+
+    @Test
     public void testLookaheads01() throws TimeoutException {
         List<Pair<String, List<String>>> tests = Arrays.asList(
                 new Pair<>("(?=aa)a", Arrays.asList("a", "aa", "aaa", "aaaa", "aaaaa")),
                 new Pair<>("(?=aaa)aa", Arrays.asList("a", "aa", "aaa", "aaaa", "aaaaa")),
                 new Pair<>("EB(?=AA)AAA", Arrays.asList("EBAA", "EBAAA")),
                 new Pair<>("EB(?=AAAA)AAA", Arrays.asList("EBAA", "EBAAA", "EBAAAA", "EBAAAAA", "EBAAAB")),
-                new Pair<>("(a(?=kl+)|qw*x)kl", Arrays.asList("akl", "qxkl", "qwxkl", "qwxkl", "akll"))
-//                new Pair<>("", Arrays.asList("", "", "", "", "")),
-//                new Pair<>("", Arrays.asList("", "", "", "", "")),
-//                new Pair<>("", Arrays.asList("", "", "", "", "")),
-//                new Pair<>("", Arrays.asList("", "", "", "", "")),
-//                new Pair<>("", Arrays.asList("", "", "", "", "")),
-//                new Pair<>("", Arrays.asList("", "", "", "", "")),
-//                new Pair<>("", Arrays.asList("", "", "", "", "")),
+                new Pair<>("(a(?=kl+)|qw*x)kl", Arrays.asList("akl", "qxkl", "qwxkl", "qwxkl", "akll", "akllq")),
+                new Pair<>("(?=aa)aa", Arrays.asList("", "a", "aa", "aaa", "aaaa"))
         );
 
         validateTests(tests);
@@ -39,6 +61,60 @@ public class TestSubMatchSAFA {
 
     @Test
     public void testLookaheads02() throws TimeoutException {
+        List<Pair<String, List<String>>> tests = Arrays.asList(
+                new Pair<>("((?=aa)a|aa)", Arrays.asList("", "a", "aa", "aaa")),
+                new Pair<>("((?=aa)a)a", Arrays.asList("", "a", "aa", "aaa")),
+                new Pair<>("(a|(?=[^a]{3})aa)aa", Arrays.asList("", "a", "aa", "aaa", "bve", "bbqaa")),
+                new Pair<>("((?=aa)a|aa)b*c", Arrays.asList("aac", "aabc", "ac", "abc")),
+                new Pair<>("a(?=c|d).", Arrays.asList("ac", "ad", "aq", "acd", "ade", "aqqc")),
+                new Pair<>("abc(?=abcde)(?=ab)", Arrays.asList("", "abcabcdeab", "abcabcde", "abcab")),
+
+                /* TODO check translation of plus is what I think makes this break */
+                // new Pair<>("f[oa]*(?=o)", Arrays.asList("fo", "fa", "faaaaao", "foaoaoaaaao")),
+
+                new Pair<>("f[oa]*(?=o)", Arrays.asList("fo", "fa", "faaaaao", "foaoaoaaaao")),
+                new Pair<>("(?=.*[a-z])(?=.*[0-9])", Arrays.asList("", "aa", "31", "a3", "ab3", "a3b")),
+                new Pair<>("((?=a).)*", Arrays.asList("a", "aa", "aaa", "aaab")),
+                new Pair<>("((?=aa)a)*a", Arrays.asList("a", "aa", "aaa", "aaaa"))
+        );
+
+        validateTests(tests);
+    }
+
+    @Test
+    public void testNestedPositiveLookaheads() throws TimeoutException {
+        List<Pair<String, List<String>>> tests = Arrays.asList(
+                new Pair<>("(?=a(?=b))a", Arrays.asList("a", "ab", "abb"))
+        );
+
+        /* TODO have to figure out first how to shuffle two SAFAs containing universal states  */
+
+        assertTrue(true);
+        // validateTests(tests);
+    }
+
+    @Test
+    public void testNegativeLookaheads() throws TimeoutException {
+        List<Pair<String, List<String>>> tests = Arrays.asList(
+                new Pair<>("^(?!aa).", Arrays.asList("a", "ab", "aa", "ad")),
+                new Pair<>("a(?!b)", Arrays.asList("a", "ab", "aa", "abc", "aab")),
+                new Pair<>("([ab]*)(?!b)c", Arrays.asList("ac", "abc", "aaaac", "abbbb")),
+                new Pair<>("abc(?!d)", Arrays.asList("abcd", "abcc", "abc")),
+                new Pair<>("\\/\\*((?!\\/\\*).)*\\*\\/", Arrays.asList(
+                        "/* */", "/   */", "/*  /* */ */", "/* this is a comment */", "/* *", "/**/"
+                )),
+                new Pair<>("((?!(ab)).)*", Arrays.asList("ab", "ba", "qw", "", "a", "b")),
+                new Pair<>("((?!(ab)).)*ab", Arrays.asList("ab", "ba", "qw", "", "a", "b")),
+                new Pair<>("(?=.*)(?=.*)(.{4}).*", Arrays.asList("1234", "12345", "123", "1", ""))
+        );
+
+        validateTests(tests);
+    }
+
+    @Test
+    public void testNestedNegativeLookaheads() throws TimeoutException {
+        /* TODO have to handle nested positive lookaheads first */
+
         assertTrue(true);
     }
 
