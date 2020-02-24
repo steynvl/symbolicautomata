@@ -21,6 +21,8 @@ public abstract class SAFAMove<P, S> {
     public Set<Integer> toStates;
     public int maxState;
 
+    public String regex;
+
     public P guard;
 
     /**

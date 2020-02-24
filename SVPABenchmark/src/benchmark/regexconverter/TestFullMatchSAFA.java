@@ -10,7 +10,7 @@ public class TestFullMatchSAFA {
     @Test
     public void testConcatAndUnion() throws TimeoutException {
         String regex = "abc|de";
-        Utils.validateFullMatchRegexConstruction(regex, 11, 10, 2, 0);
+        Utils.validateFullMatchRegexConstruction(regex, 12, 12, 1, 0);
         Utils.validateFullMatchRegexInputStrings(regex, Arrays.asList("abc", "de"), Arrays.asList("ab"));
     }
 
@@ -39,7 +39,7 @@ public class TestFullMatchSAFA {
         Utils.validateFullMatchRegexConstruction("[a-zA-Z1-9]", 2, 1, 1, 0);
         Utils.validateFullMatchRegexInputStrings("[a-zA-Z1-9]", Arrays.asList("8", "b", "c", "C"), Arrays.asList("10"));
 
-        Utils.validateFullMatchRegexConstruction("\\a|[b-zA-Z1-9]", 5, 4, 2, 0);
+        Utils.validateFullMatchRegexConstruction("\\a|[b-zA-Z1-9]", 6, 6, 1, 0);
         Utils.validateFullMatchRegexInputStrings("\\a|[b-zA-Z1-9]", Arrays.asList(), Arrays.asList("\\a"));
     }
 
@@ -54,8 +54,17 @@ public class TestFullMatchSAFA {
         Utils.validateFullMatchRegexConstruction("[abc]*", 3, 3, 1, 0);
         Utils.validateFullMatchRegexInputStrings("[abc]*", Arrays.asList("", "aaaa", "abcbcbcbcc"), Arrays.asList("d"));
 
-        Utils.validateFullMatchRegexConstruction("de?|f[abc]?", 13, 12, 4, 0);
+        Utils.validateFullMatchRegexConstruction("de?|f[abc]?", 16, 18, 1, 0);
         Utils.validateFullMatchRegexInputStrings("de?|f[abc]?", Arrays.asList("d", "de", "fa", "f"), Arrays.asList("def"));
+    }
+
+    @Test
+    public void testRepetition() throws TimeoutException {
+        Utils.validateFullMatchRegexInputStrings("[\\d]{2}", Arrays.asList("1", "11"));
+        Utils.validateFullMatchRegexInputStrings("a{2,}", Arrays.asList("a", "aa", "aaa", "aaaa", "aaaaaaaa"));
+        Utils.validateFullMatchRegexInputStrings("1{2,3}", Arrays.asList("1", "11", "111", "1111", "1111111"));
+        Utils.validateFullMatchRegexInputStrings(".{1,3}", Arrays.asList("1", "12", "123", "1234", ""));
+        Utils.validateFullMatchRegexInputStrings(".{4}", Arrays.asList("1", "12", "123", "1234", "12345", ""));
     }
 
     @Test
@@ -106,6 +115,7 @@ public class TestFullMatchSAFA {
                 Arrays.asList("abc", "anvbajxcz", "cba"), Arrays.asList("ab", "ac", "cbqq"));
 
         Utils.validateFullMatchRegexInputStrings("((?=aa)a)*a", Arrays.asList("a", "aa", "aaa", "aaaa", "aaab"));
+        Utils.validateFullMatchRegexInputStrings("(?=.*)(?=.*)(.{4}).*", Arrays.asList("1234", "12345", "123"));
     }
 
     @Test
@@ -114,7 +124,6 @@ public class TestFullMatchSAFA {
         Utils.validateFullMatchRegexInputStrings("(?=a(?=bc))...", Arrays.asList("abc"), Arrays.asList());
         Utils.validateFullMatchRegexInputStrings("(?=a(?=b)b)...", Arrays.asList("abc"), Arrays.asList());
         Utils.validateFullMatchRegexInputStrings("(?=a(?=b)c)...", Arrays.asList(), Arrays.asList("abc"));
-
     }
 
     @Test
@@ -127,6 +136,10 @@ public class TestFullMatchSAFA {
         Utils.validateFullMatchRegexInputStrings("\\/\\*((?!\\/\\*).)*\\*\\/", Arrays.asList(
                 "/* */", "/   */", "/*  /* */ */", "/* this is a comment */", "/* *", "/**/"
         ));
+
+        Utils.validateFullMatchRegexInputStrings("((?!(ab)).)*", Arrays.asList("ab", "ba", "qw", "", "a", "b"));
+        Utils.validateFullMatchRegexInputStrings("((?!(ab)).)ab*", Arrays.asList("ab", "ba", "qw", "", "a", "b"));
+        Utils.validateFullMatchRegexInputStrings("(a|(?!ab))*b", Arrays.asList("a", "b", "ab", "bb", "bbb"));
     }
 
     @Test
