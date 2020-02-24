@@ -140,6 +140,7 @@ public class TestFullMatchSAFA {
         Utils.validateFullMatchRegexInputStrings("((?!(ab)).)*", Arrays.asList("ab", "ba", "qw", "", "a", "b"));
         Utils.validateFullMatchRegexInputStrings("((?!(ab)).)ab*", Arrays.asList("ab", "ba", "qw", "", "a", "b"));
         Utils.validateFullMatchRegexInputStrings("(a|(?!ab))*b", Arrays.asList("a", "b", "ab", "bb", "bbb"));
+        Utils.validateFullMatchRegexInputStrings("(?=.*)(?=.*)(.{4}).*", Arrays.asList("1234", "12345", "123"));
     }
 
     @Test

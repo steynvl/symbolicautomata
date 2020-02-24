@@ -1365,7 +1365,12 @@ public class SAFA<P, S> {
 
         // Negate the set of final states
         Set<Integer> nonFinal = new HashSet<>();
+//		assert initialState.getStates().size() == 1;
+//		Integer init = initialState.getStates().iterator().next();
         for (int state = 0; state <= aut.maxStateId; state++) {
+//			if (state == init && !finalStates.contains(state)) {
+//				continue;
+//			}
 
             if (!aut.finalStates.contains(state) && !aut.lookaheadFinalStates.contains(state)) {
                 nonFinal.add(state);
@@ -1504,7 +1509,6 @@ public class SAFA<P, S> {
 
                         SAFAMove<A, B> tnew = (SAFAMove<A, B>) t1.clone();
                         tnew.from = currStateId;
-
                         tnew.to = pb.MkState(nextStateId);
 
                         transitions.add(tnew);

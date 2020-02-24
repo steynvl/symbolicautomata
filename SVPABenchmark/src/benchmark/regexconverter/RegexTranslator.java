@@ -11,7 +11,7 @@ public class RegexTranslator {
         return _translate(regexNode);
     }
 
-    public static RegexNode _translate(RegexNode regexNode) {
+    private static RegexNode _translate(RegexNode regexNode) {
         if (regexNode instanceof ConcatenationNode) {
             ConcatenationNode node = (ConcatenationNode) regexNode;
 

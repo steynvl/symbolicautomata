@@ -74,21 +74,21 @@ public class RegexConverter {
         /* process remaining states */
         int initial = safa.getInitialState().getStates().iterator().next();
         LinkedList<Integer> toProcess = new LinkedList<>();
-        List<Integer> fromCandidiates = new ArrayList<>();
-        List<Integer> toCandidiates = new ArrayList<>();
+        List<Integer> fromCandidates = new ArrayList<>();
+        List<Integer> toCandidates = new ArrayList<>();
         for (int s : safa.getStates()) {
             if (s != initial && !safa.getFinalStates().contains(s))
                 toProcess.add(s);
             if (!safa.getFinalStates().contains(s))
-                fromCandidiates.add(s);
+                fromCandidates.add(s);
             if (s != initial)
-                toCandidiates.add(s);
+                toCandidates.add(s);
         }
 
         while (!toProcess.isEmpty()) {
             int q = toProcess.removeFirst();
-            int q1 = fromCandidiates.iterator().next();
-            int q2 = toCandidiates.iterator().next();
+            int q1 = fromCandidates.iterator().next();
+            int q2 = toCandidates.iterator().next();
 
             for (SAFAMove<CharPred, Character> move : safa.getEpsilonFrom(q1)) {
                 int to;

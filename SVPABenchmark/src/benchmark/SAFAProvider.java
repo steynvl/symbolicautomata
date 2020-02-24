@@ -4,41 +4,66 @@ import RegexParser.RegexNode;
 import RegexParser.RegexParserProvider;
 import automata.safa.SAFA;
 import benchmark.regexconverter.RegexConverter;
+import benchmark.regexconverter.RegexSubMatching;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
+import theory.intervals.SubMatchUnaryCharIntervalSolver;
 import theory.intervals.UnaryCharIntervalSolver;
+import utilities.Pair;
 
 import java.util.List;
 
 public class SAFAProvider {
 
-    public SAFAProvider(String regex) {
+    private SAFA<CharPred, Character> fullMatchSAFA = null;
+    private UnaryCharIntervalSolver fullMatchSolver = new UnaryCharIntervalSolver();
 
+    private SAFA<CharPred, Character> subMatchSAFA = null;
+    private SubMatchUnaryCharIntervalSolver subMatchSolver;
+
+    private String regex;
+
+    public SAFAProvider(String regex) {
+        this.regex = regex;
     }
 
     public SAFA<CharPred, Character> getFullMatchSAFA() {
-        return null;
+        if (fullMatchSAFA == null) {
+            List<RegexNode> nodes = RegexParserProvider.parse(new String[]{ regex });
+            try {
+                fullMatchSAFA = RegexConverter.toSAFA(nodes.get(0), fullMatchSolver);
+            } catch (TimeoutException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return fullMatchSAFA;
+    }
+
+    public UnaryCharIntervalSolver getFullMatchSolver() {
+        return fullMatchSolver;
     }
 
     public SAFA<CharPred, Character> getSubMatchSAFA() {
-        return null;
-    }
-
-    public SAFAProvider(String regex, UnaryCharIntervalSolver solver){
-        String[] str = {regex};
-        List<RegexNode> nodes = RegexParserProvider.parse(str);
-
-        try {
-            this.mySAFA = RegexConverter.toSAFA(nodes.get(0), solver);
-        } catch (TimeoutException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        if (subMatchSAFA == null) {
+            try {
+                Pair<SAFA<CharPred, Character>, SubMatchUnaryCharIntervalSolver> p = RegexSubMatching.constructSubMatchingSAFA(regex);
+                subMatchSAFA = p.first;
+                subMatchSolver = p.second;
+            } catch (TimeoutException e) {
+                e.printStackTrace();
+            }
         }
+
+        return subMatchSAFA;
     }
 
-    public SAFA<CharPred, Character> getSAFA(){
-        return mySAFA;
+    public SubMatchUnaryCharIntervalSolver getSubMatchSolver() {
+        if (subMatchSAFA == null) {
+            getSubMatchSAFA();
+        }
+
+        return subMatchSolver;
     }
 
-    private SAFA<CharPred, Character> mySAFA;
 }
