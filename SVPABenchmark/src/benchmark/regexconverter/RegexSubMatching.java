@@ -59,6 +59,7 @@ public class RegexSubMatching {
         SubMatchUnaryCharIntervalSolver solver = new SubMatchUnaryCharIntervalSolver(delimiter);
 
         RegexNode translated = RegexTranslator.translate(node);
+
         SAFA<CharPred, Character> safa = RegexConverter.toSAFA(translated, solver, delimiter);
         safa = SAFA.concatenate(safa, buildRemainder(delimiter, solver), solver);
 

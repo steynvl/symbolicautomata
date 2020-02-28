@@ -61,6 +61,10 @@ public class SAFA<P, S> {
         return maxStateId;
     }
 
+    public void setMaxStateId(int maxStateId) {
+        this.maxStateId = maxStateId;
+    }
+
     /**
      * @return number of states in the automaton
      */
@@ -226,8 +230,20 @@ public class SAFA<P, S> {
         }
     }
 
+    public Map<Integer, Collection<SAFAInputMove<P, S>>> getInputMovesFrom() {
+        return inputMovesFrom;
+    }
+
+    public Map<Integer, Collection<SAFAInputMove<P, S>>> getInputMovesTo() {
+        return inputMovesTo;
+    }
+
     public Map<Integer, Collection<SAFAEpsilon<P, S>>> getEpsilonFrom() {
         return epsilonFrom;
+    }
+
+    public Map<Integer, Collection<SAFAEpsilon<P, S>>> getEpsilonTo() {
+        return epsilonTo;
     }
 
     /**

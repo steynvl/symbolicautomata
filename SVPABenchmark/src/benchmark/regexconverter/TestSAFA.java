@@ -11,7 +11,8 @@ import org.junit.runners.Suite;
     TestSAFANegation.class,
     TestShuffleOperation.class,
     TestSubMatchSAFA.class,
-    TestSubMatchEquivalence.class
+    TestSubMatchEquivalence.class,
+    TestSAFAToRegex.class
 })
 
 public class TestSAFA { }

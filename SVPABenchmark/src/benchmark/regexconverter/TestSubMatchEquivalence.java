@@ -1,8 +1,10 @@
 package benchmark.regexconverter;
 
+import RegexParser.RegexParserProvider;
 import automata.safa.BooleanExpressionFactory;
 import automata.safa.SAFA;
 import automata.safa.booleanexpression.PositiveBooleanExpression;
+import benchmark.SAFAProvider;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
@@ -49,6 +51,10 @@ public class TestSubMatchEquivalence {
     @Test
     public void testSubMatchEquivalence04() throws TimeoutException {
         RegexSubMatching rsm = new RegexSubMatching("b|(a|b)*b", "bb|(a|b)*b");
+
+        SAFA<CharPred, Character> safa = new SAFAProvider("b|(a|b)*b").getSubMatchSAFA();
+
+        System.out.println(safa.getDot("safa"));
 
 //        testEquivalence(rsm, false, Arrays.asList());
     }

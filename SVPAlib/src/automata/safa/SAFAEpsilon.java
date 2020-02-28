@@ -37,6 +37,11 @@ public class SAFAEpsilon<U,S> extends SAFAMove<U,S> {
         toStates.addAll(to.getStates());
     }
 
+    public SAFAEpsilon(Integer from, PositiveBooleanExpression to, String regex) {
+        this(from, to);
+        this.regex = regex;
+    }
+
     @Override
     public boolean isDisjointFrom(SAFAMove<U,S> t, BooleanAlgebra<U,S> ba){
         return t.from.equals(from);
