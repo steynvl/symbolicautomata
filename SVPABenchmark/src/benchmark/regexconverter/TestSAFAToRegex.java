@@ -7,7 +7,6 @@ import theory.characters.CharPred;
 import theory.intervals.UnaryCharIntervalSolver;
 import utilities.Pair;
 
-import java.sql.Time;
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,9 +19,9 @@ public class TestSAFAToRegex {
     @Test
     public void testConcat() throws TimeoutException {
         List<Pair<String, String>> pairs = Arrays.asList(
-                new Pair<>("ab", "[a]ε[b]"),
-                new Pair<>("abc", "[a]ε[b]ε[c]"),
-                new Pair<>("ab(cd)e(f)", "[a]ε[b]ε[c]ε[d]ε[e]ε[f]"),
+                new Pair<>("ab", "aεb"),
+                new Pair<>("abc", "aεbεc"),
+                new Pair<>("ab(cd)e(f)", "aεbεcεdεeεf"),
                 new Pair<>("\\s", "[\\t-\\r ]"),
 
                 /* TODO add so that when converting back to a regex we can map character classes
@@ -38,9 +37,9 @@ public class TestSAFAToRegex {
     @Test
     public void testUnion() throws TimeoutException {
         List<Pair<String, String>> pairs = Arrays.asList(
-                new Pair<>("ab|cd", "(ε[a]ε[b]ε|ε[c]ε[d]ε)"),
-                new Pair<>("ab|(c|d)", "(ε[a]ε[b]ε|ε(ε[c]ε|ε[d]ε)ε)"),
-                new Pair<>("a|(a|(b|cd))", "(ε[a]ε|ε(ε[a]ε|ε(ε[b]ε|ε[c]ε[d]ε)ε)ε)")
+                new Pair<>("ab|cd", "(εaεbε|εcεdε)"),
+                new Pair<>("ab|(c|d)", "(εaεbε|ε(εcε|εdε)ε)"),
+                new Pair<>("a|(a|(b|cd))", "(εaε|ε(εaε|ε(εbε|εcεdε)ε)ε)")
         );
 
         validateWords(pairs);
@@ -51,7 +50,7 @@ public class TestSAFAToRegex {
         List<Pair<String, String>> pairs = Arrays.asList(
                 new Pair<>("[abc]", "[a-c]"),
                 new Pair<>("[\\d]", "[0-9]"),
-                new Pair<>("a|[b-zA-Z1-9]", "(ε[a]ε|ε[1-9A-Zb-z]ε)")
+                new Pair<>("a|[b-zA-Z1-9]", "(εaε|ε[1-9A-Zb-z]ε)")
         );
 
         validateWords(pairs);
@@ -60,11 +59,11 @@ public class TestSAFAToRegex {
     @Test
     public void testQuantifiers() throws TimeoutException {
         List<Pair<String, String>> pairs = Arrays.asList(
-                new Pair<>("a*", "ε(ε[a]ε)*ε"),
-                new Pair<>("ab*", "[a]ε(ε[b]ε)*ε"),
+                new Pair<>("a*", "ε(εaε)*ε"),
+                new Pair<>("ab*", "aε(εbε)*ε"),
                 new Pair<>("[abc]*", "ε(ε[a-c]ε)*ε"),
 
-                new Pair<>("de?|f[abc]?", "(ε[d]ε(ε[e]ε|εε)ε|ε[f]ε(ε[a-c]ε|εε)ε)")
+                new Pair<>("de?|f[abc]?", "(εdε(εeε|εε)ε|εfε(ε[a-c]ε|εε)ε)")
         );
 
         validateWords(pairs);
@@ -74,9 +73,9 @@ public class TestSAFAToRegex {
     @Test
     public void testRepeat() throws TimeoutException {
         List<Pair<String, String>> pairs = Arrays.asList(
-                new Pair<>("[a]{2}", "[a]ε[a]"),
-                new Pair<>("a{2,}", "[a]ε[a]ε(ε[a]ε)*ε"),
-                new Pair<>("a{2,4}", "(ε(ε[a]ε[a]ε|ε[a]ε[a]ε[a]ε)ε|ε[a]ε[a]ε[a]ε[a]ε)")
+                new Pair<>("[a]{2}", "aεa"),
+                new Pair<>("a{2,}", "aεaε(εaε)*ε"),
+                new Pair<>("a{2,4}", "(ε(εaεaε|εaεaεaε)ε|εaεaεaεaε)")
         );
 
         validateWords(pairs);
@@ -85,10 +84,10 @@ public class TestSAFAToRegex {
     @Test
     public void testPositiveLookaheads() throws TimeoutException {
         List<Pair<String, String>> pairs = Arrays.asList(
-                new Pair<>("(?=a)a", "(?=[a]ε(ε[\\u0000-\\uffff]ε)*ε)ε[a]"),
-                new Pair<>("(?=a)(b|c)", "(?=[a]ε(ε[\\u0000-\\uffff]ε)*ε)ε(ε[b]ε|ε[c]ε)"),
-                new Pair<>("((?=aa)a|aa)", "(ε(?=[a]ε[a]ε(ε[\\u0000-\\uffff]ε)*ε)ε[a]ε|ε[a]ε[a]ε)"),
-                new Pair<>("((?=aa)a|aa)b*c", "(ε(?=[a]ε[a]ε(ε[\\u0000-\\uffff]ε)*ε)ε[a]ε|ε[a]ε[a]ε)ε(ε[b]ε)*ε[c]")
+                new Pair<>("(?=a)a", "(?=aε)εa"),
+                new Pair<>("(?=a)(b|c)", "(?=aε)ε(εbε|εcε)"),
+                new Pair<>("((?=aa)a|aa)", "(ε(?=aεaε)εaε|εaεaε)"),
+                new Pair<>("((?=aa)a|aa)b*c", "(ε(?=aεaε)εaε|εaεaε)ε(εbε)*εc")
         );
 
         validateWords(pairs);
@@ -96,18 +95,34 @@ public class TestSAFAToRegex {
 
     @Test
     public void testRepeatedPositiveLookaheads() throws TimeoutException {
-        List<Pair<String, String>> pairs = Arrays.asList(
-                new Pair<>("((?=aa)a)*a", "ε(ε(?=[a]ε[a]ε(ε[\\u0000-\\uffff]ε)*ε)ε[a]ε)*ε[a]"),
-                new Pair<>("((a(?=a)a)*)*", "ε(ε(ε[a]ε(?=[a]ε(ε[\\u0000-\\uffff]ε)*ε)ε[a]ε)*ε)*ε"),
-                new Pair<>("((a(?=bc)a)*)...", "ε(ε[a]ε(?=[b]ε[c]ε(ε[\\u0000-\\uffff]ε)*ε)ε[a]ε)*ε[\\u0000-\\uffff]ε[\\u0000-\\uffff]ε[\\u0000-\\uffff]")
-        );
+//        List<Pair<String, String>> pairs = Arrays.asList(
+//                new Pair<>("((?=aa)a)*a", "ε(ε(?=aεaε)εaε)*εa"),
+//                new Pair<>("((a(?=a)a)*)*", "ε(ε(εaε(?=aε)εaε)*ε)*ε"),
+//                new Pair<>("((a(?=bc)a)*)...", "ε(εaε(?=bεcε)εaε)*ε.ε.ε."),
+//                new Pair<>("((?=a).)*", "ε(ε(?=aε)ε.ε)*ε"),
+//                new Pair<>("((?=aa)a(q(?=b)k)*)*a", "ε(ε(?=aεaε)εaε(εqε(?=(bεε|bεε(.εε)*.εε))εkε)*ε)*εa")
+//        );
 
-        validateWords(pairs);
+//        validateWords(pairs);
 
-//        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("(?=a(?=bc))...");
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("((a(?=bc)a)*)...");
+
+//        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("(E(?=F)G)*");
+//        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("((a(?=bc)a)*)...");
+//        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("((?=aa)a(q(?=b)k)*)*a");
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("(?=a((?=b))*)*");
+
         System.out.println(safa.getDot("safa"));
         System.out.println("regex = " + RegexConverter.toRegex(safa, solver));
+    }
+
+    @Test
+    public void testNestedPositiveLookaheads() throws TimeoutException {
+       List<Pair<String, String>> pairs = Arrays.asList(
+               new Pair<>("(?=a(?=b))", "(?=aε(?=bε)ε)"),
+               new Pair<>("(?=a(?=bc)).", "(?=aε(?=bεcε)ε)ε.")
+       );
+
+        validateWords(pairs);
     }
 
     @Test

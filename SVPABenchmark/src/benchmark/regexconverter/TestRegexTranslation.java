@@ -22,9 +22,9 @@ public class TestRegexTranslation {
         ConcatenationNode node1 = (ConcatenationNode) root;
         UnionNode node2 = (UnionNode) node1.getList().get(0);
 
-        assertEquals("(((((Char:b)(Char:d))([Char:0-Char:9 ]))((Dot)*))(((Char:m) | (Char:k))))(Meta:d)",
+        assertEquals("(((((b)(d))([0-9 ]))((Dot)*))(((m) | (k))))(Meta:d)",
                 RegexTranslator.printNode(RegexTranslator.follow(node2.getMyRegex1())));
-        assertEquals("(((((Char:b)(Char:d))([Char:0-Char:9 ]))((Dot)*))(((Char:m) | (Char:k))))(Meta:d)",
+        assertEquals("(((((b)(d))([0-9 ]))((Dot)*))(((m) | (k))))(Meta:d)",
                 RegexTranslator.printNode(RegexTranslator.follow(node2.getMyRegex2())));
     }
 
@@ -40,11 +40,11 @@ public class TestRegexTranslation {
         StarNode node4 = (StarNode) node3.getList().get(0);
         UnionNode node5 = (UnionNode) node4.getMyRegex1();
 
-        assertEquals("((((((Char:a) | (Char:b)))(Char:b))(Char:c))(Dot))((Char:d)*)",
+        assertEquals("((((((a) | (b)))(b))(c))(Dot))((d)*)",
                 RegexTranslator.printNode(RegexTranslator.follow(node5.getMyRegex1())));
-        assertEquals("((((((Char:a) | (Char:b)))(Char:b))(Char:c))(Dot))((Char:d)*)",
+        assertEquals("((((((a) | (b)))(b))(c))(Dot))((d)*)",
                 RegexTranslator.printNode(RegexTranslator.follow(node5.getMyRegex2())));
-        assertEquals("((((((Char:a) | (Char:b)))(Char:b))(Char:c))(Dot))((Char:d)*)",
+        assertEquals("((((((a) | (b)))(b))(c))(Dot))((d)*)",
                 RegexTranslator.printNode(RegexTranslator.follow(node4.getMyRegex1())));
     }
 
@@ -60,13 +60,13 @@ public class TestRegexTranslation {
         ConcatenationNode node3 = (ConcatenationNode) node2.getMyRegex1();
         StarNode node4 = (StarNode) node3.getList().get(0);
 
-        assertEquals("(((Char:c)(((Char:a) | (Char:b)(((Char:a) | (Char:a)))(Char:b)(Char:b)((((Char:a) | (Char:b)))(Char:a)))))(Dot))((Char:d)*)",
+        assertEquals("(((c)(((a) | (b)(((a) | (a)))(b)(b)((((a) | (b)))(a)))))(Dot))((d)*)",
                 RegexTranslator.printNode(RegexTranslator.follow(node2.getMyRegex2())));
-        assertEquals("(((Char:c)(((Char:a) | (Char:b)(((Char:a) | (Char:a)))(Char:b)(Char:b)((((Char:a) | (Char:b)))(Char:a)))))(Dot))((Char:d)*)",
+        assertEquals("(((c)(((a) | (b)(((a) | (a)))(b)(b)((((a) | (b)))(a)))))(Dot))((d)*)",
                 RegexTranslator.printNode(RegexTranslator.follow(node3.getList().get(1))));
-        assertEquals("(((((((Char:a) | (Char:b)))(Char:b))(Char:c))(((Char:a) | (Char:b)(((Char:a) | (Char:a)))(Char:b)(Char:b)((((Char:a) | (Char:b)))(Char:a)))))(Dot))((Char:d)*)",
+        assertEquals("(((((((a) | (b)))(b))(c))(((a) | (b)(((a) | (a)))(b)(b)((((a) | (b)))(a)))))(Dot))((d)*)",
                 RegexTranslator.printNode(RegexTranslator.follow(node4)));
-        assertEquals("(((((((Char:a) | (Char:b)))(Char:b))(Char:c))(((Char:a) | (Char:b)(((Char:a) | (Char:a)))(Char:b)(Char:b)((((Char:a) | (Char:b)))(Char:a)))))(Dot))((Char:d)*)",
+        assertEquals("(((((((a) | (b)))(b))(c))(((a) | (b)(((a) | (a)))(b)(b)((((a) | (b)))(a)))))(Dot))((d)*)",
                 RegexTranslator.printNode(RegexTranslator.follow(node4.getMyRegex1())));
     }
 
@@ -85,11 +85,11 @@ public class TestRegexTranslation {
         UnionNode node7 = (UnionNode) node6.getList().get(1);
         ConcatenationNode node8 = (ConcatenationNode) node7.getMyRegex1();
 
-        assertEquals("((((((Char:k)(Dot))(Meta:d))(((Char:a)(Char:a) | (Char:b)(Char:b))))(Char:e))(Char:n))(Char:d)",
+        assertEquals("((((((k)(Dot))(Meta:d))(((a)(a) | (b)(b))))(e))(n))(d)",
                 RegexTranslator.printNode(RegexTranslator.follow(node7.getMyRegex2())));
-        assertEquals("((((((Char:k)(Dot))(Meta:d))(((Char:a)(Char:a) | (Char:b)(Char:b))))(Char:e))(Char:n))(Char:d)",
+        assertEquals("((((((k)(Dot))(Meta:d))(((a)(a) | (b)(b))))(e))(n))(d)",
                 RegexTranslator.printNode(RegexTranslator.follow(node8.getList().get(0))));
-        assertEquals("((((((Char:k)(Dot))(Meta:d))(((Char:a)(Char:a) | (Char:b)(Char:b))))(Char:e))(Char:n))(Char:d)",
+        assertEquals("((((((k)(Dot))(Meta:d))(((a)(a) | (b)(b))))(e))(n))(d)",
                 RegexTranslator.printNode(RegexTranslator.follow(node8.getList().get(1))));
     }
 
@@ -103,7 +103,7 @@ public class TestRegexTranslation {
         AtomicGroupNode node2 = (AtomicGroupNode ) node1.getList().get(0);
         ConcatenationNode node3 = (ConcatenationNode) node2.getMyRegex1();
 
-        assertEquals("((Char:a)(((Char:b)*)((Char:a)*)))(((Char:a)*)((Char:b)*))" +
+        assertEquals("((a)(((b)*)((a)*)))(((a)*)((b)*))" +
                         "",
                 RegexTranslator.printNode(RegexTranslator.follow(node3.getList().get(0))));
     }
@@ -121,9 +121,9 @@ public class TestRegexTranslation {
         ConcatenationNode node4 = (ConcatenationNode) node3.getList().get(2);
         StarNode node5 = (StarNode) node4.getList().get(1);
 
-        assertEquals("Char:e",
+        assertEquals("e",
                 RegexTranslator.printNode(RegexTranslator.follow(node5.getMyRegex1())));
-        assertEquals("Char:e",
+        assertEquals("e",
                 RegexTranslator.printNode(RegexTranslator.follow(node5)));
     }
 
@@ -181,6 +181,7 @@ public class TestRegexTranslation {
         String java = String.format("(?>%s)", regex);
 
         RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
+
         SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
 
         List<String> strings = Arrays.asList("", "b", "ab", "aab", "abb");
@@ -201,7 +202,7 @@ public class TestRegexTranslation {
 
     @Test
     public void testAtomicOperator01() throws TimeoutException {
-        String regex = "a(?>bc|b)c";
+        String regex = "a*(?>bc|b)c";
         SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("abc");
@@ -277,6 +278,7 @@ public class TestRegexTranslation {
         List<String> strings = Arrays.asList(".625", ".625000");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
     }
+
     @Test
     public void testAtomicOperator10() throws TimeoutException {
         /* TODO fix, the optional operator seems to be breaking it! */
@@ -286,6 +288,7 @@ public class TestRegexTranslation {
 //        List<String> strings = Arrays.asList("", "azaaz", "a10ask_a");
 //        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
     }
+
     @Test
     public void testAtomicOperator11() throws TimeoutException {
         String regex = "(?>a*(b*a*)(a*b*))";
@@ -294,7 +297,6 @@ public class TestRegexTranslation {
         List<String> strings = Arrays.asList("abab");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
     }
-
     @Test
     public void testAtomicOperator12() throws TimeoutException {
         String regex = "(?>((a|b)*)*)b";
@@ -319,6 +321,20 @@ public class TestRegexTranslation {
         SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
         List<String> strings = Arrays.asList("a", "b", "aababab", "\"", "aababa\"");
+        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
+    }
+
+    @Test
+    public void testAtomicOperator15() throws TimeoutException {
+        String regex = "(?>a*a)";
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
+
+        RegexNode regexNode = Utils.parseRegex("(?>a*a)a");
+        StringBuilder sb = new StringBuilder();
+        regexNode.toString(sb);
+        System.out.println(sb.toString() + " <<<");
+
+        List<String> strings = Arrays.asList("", "a", "aa", "aaa", "aaaa", "baaa");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
     }
 

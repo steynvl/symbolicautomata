@@ -101,7 +101,7 @@ public class RegexTranslator {
 
         StringBuilder sb = new StringBuilder();
         regexNode.toString(sb);
-        return sb.toString();
+        return sb.toString().replaceAll("Char:", "");
     }
 
     public static RegexNode follow(RegexNode regexNode) {

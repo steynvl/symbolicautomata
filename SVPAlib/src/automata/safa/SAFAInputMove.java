@@ -36,6 +36,11 @@ public class SAFAInputMove<P,S> extends SAFAMove<P, S> {
 		this.guard = guard;
 	}
 
+	public SAFAInputMove(Integer from, PositiveBooleanExpression to, P guard, String regex) {
+		this(from, to, guard);
+		this.regex = regex;
+	}
+
 	public boolean isSatisfiable(BooleanAlgebra<P,S> boolal) throws TimeoutException {
 		if (guard == null) {
 			return true;
@@ -95,7 +100,7 @@ public class SAFAInputMove<P,S> extends SAFAMove<P, S> {
 
 	@Override
 	public Object clone(){
-		return new SAFAInputMove<P, S>(from, to, guard);
+		return new SAFAInputMove<P, S>(from, to, guard, regex);
 	}
 
 	@Override

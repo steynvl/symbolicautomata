@@ -53,16 +53,20 @@ public class RegexConverter {
 
         /* process all universal states */
         for (int s : safa.getStates()) {
+
             Collection<SAFAMove<CharPred, Character>> moves = safa.getTransitionsFrom(s);
             SAFAMove<CharPred, Character> transition;
 
             /* FIXME: to be able to work for a epsilon-free SAFA, have to process all and then merge them together somehow */
             if (moves.size() == 1 && (transition = moves.iterator().next()).to instanceof PositiveAnd) {
+                System.out.println("transition = " + transition);
 
                 universalStates.add(transition.from);
-                Iterator<Integer> it = transition.to.getStates().iterator();
-                int lookaheadStart = it.next();
-                int mainBranch = it.next();
+                int lookaheadStart = Collections.min(transition.to.getStates());
+                int mainBranch = Collections.max(transition.to.getStates());
+
+                System.out.println("from = " + transition.from);
+                System.out.println("lookaheadStart = " + lookaheadStart);
 
                 SAFA<CharPred, Character> leftSubAut = constructSubAutomata(lookaheadStart, safa, solver);
                 lookaheadStates.addAll(leftSubAut.getStates());
@@ -70,8 +74,14 @@ public class RegexConverter {
 
                 transition.to = pb.MkState(mainBranch);
 
-                /* FIXME: remove the boilerplate .* that gets inserted at the end of every lookahead */
-                transition.regex = String.format("(?=%s)", toRegex(leftSubAut, solver));
+                String regex = toRegex(leftSubAut, solver);
+
+                String trailingMatch = String.format("(%s.%s)*%s", EPSILON, EPSILON, EPSILON);
+                if (regex.endsWith(trailingMatch)) {
+                    regex = regex.substring(0, regex.length() - trailingMatch.length());
+                }
+
+                transition.regex = String.format("(?=%s)", regex);
             }
         }
 
@@ -190,7 +200,16 @@ public class RegexConverter {
 
                 SAFAMove<CharPred, Character> tnew = (SAFAMove<CharPred, Character>) move.clone();
 
-                tnew.regex = tnew.isEpsilonTransition() ? EPSILON : tnew.guard.toString();
+                if (move.regex != null) {
+                    tnew.regex = move.regex;
+                } else if (move.isEpsilonTransition()) {
+                    tnew.regex = EPSILON;
+                } else {
+                    tnew.regex = tnew.guard.getSingleChar()
+                            .map(character -> character + "")
+                            .orElseGet(() -> tnew.guard.equals(solver.True()) ? "." : tnew.guard.toString());
+                }
+
                 transitions.add(tnew);
             }
 

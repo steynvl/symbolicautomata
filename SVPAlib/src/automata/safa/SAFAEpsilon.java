@@ -83,7 +83,7 @@ public class SAFAEpsilon<U,S> extends SAFAMove<U,S> {
 
     @Override
     public Object clone(){
-        return new SAFAEpsilon<U, S>(from, to);
+        return new SAFAEpsilon<U, S>(from, to, regex);
     }
 
     @Override

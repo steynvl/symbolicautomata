@@ -12,13 +12,7 @@ import com.google.common.collect.ImmutableList;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
@@ -155,6 +149,17 @@ public class CharPred extends ICharPred{
 		}
 
 		return false;
+	}
+
+	public Optional<Character> getSingleChar() {
+		if (intervals.size() == 1) {
+			ImmutablePair<Character, Character> pair = intervals.get(0);
+			if (pair.left == pair.right) {
+				return Optional.of(pair.left);
+			}
+		}
+
+		return Optional.empty();
 	}
 
 	@Override
