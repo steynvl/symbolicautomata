@@ -1,6 +1,7 @@
 package benchmark.regexconverter;
 
 import RegexParser.*;
+import org.apache.commons.lang3.SerializationUtils;
 
 import java.util.*;
 
@@ -70,13 +71,18 @@ public class RegexTranslator {
             /* E+ */
             PlusNode plusNode = (PlusNode) regexNode;
 
-            /* Et(E*) */
+            /* t(E.E*) */
             List<RegexNode> nodes = new LinkedList<>();
-            nodes.add(plusNode.getMyRegex1());
 
-            nodes.add(_translate(new StarNode(plusNode.getMyRegex1(), QuantifierType.GREEDY)));
+            nodes.add(SerializationUtils.clone(plusNode.getMyRegex1()));
+            StarNode starNode = new StarNode(plusNode.getMyRegex1(), QuantifierType.GREEDY);
+            starNode.getMyRegex1().parent = starNode;
+            nodes.add(starNode);
 
-            return new ConcatenationNode(nodes);
+            ConcatenationNode concat = new ConcatenationNode(nodes);
+            nodes.forEach(n -> n.parent = concat);
+
+            return _translate(concat);
         } else if (regexNode instanceof OptionalNode) {
             /* E? */
             OptionalNode optionalNode = (OptionalNode) regexNode;
