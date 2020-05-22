@@ -56,6 +56,7 @@ public class RegexSubMatching {
         RegexNode node = Utils.parseRegex(regex);
 
         Character delimiter = findDelimiterCandidate(node);
+        delimiter = '#';
         SubMatchUnaryCharIntervalSolver solver = new SubMatchUnaryCharIntervalSolver(delimiter);
 
         RegexNode translated = RegexTranslator.translate(node);

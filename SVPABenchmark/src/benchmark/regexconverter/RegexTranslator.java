@@ -81,6 +81,22 @@ public class RegexTranslator {
 
             ConcatenationNode concat = new ConcatenationNode(nodes);
             nodes.forEach(n -> n.parent = concat);
+            concat.parent = regexNode.parent;
+
+            /* XXX: FIXME */
+            /* Change PlusNode to ConcatenationNode in parse tree. */
+            /* Change interface of FormulaNode in automatark to give all */
+            /* child nodes of any given node in the parse tree. */
+            if (regexNode.parent instanceof ConcatenationNode) {
+                ConcatenationNode c = (ConcatenationNode) regexNode.parent;
+                for (int i = 0; i < c.getList().size(); i++) {
+                    RegexNode r = c.getList().get(i);
+                    if (r == regexNode) {
+                        c.getList().set(i, concat);
+                        break;
+                    }
+                }
+            }
 
             return _translate(concat);
         } else if (regexNode instanceof OptionalNode) {
@@ -114,9 +130,6 @@ public class RegexTranslator {
         List<RegexNode> subexpressions = new LinkedList<>();
         Set<RegexNode> visited = new HashSet<>();
 
-        StringBuilder sb = new StringBuilder();
-        regexNode.toString(sb);
-
         if (regexNode instanceof CharNode && regexNode.parent instanceof ConcatenationNode) {
             ConcatenationNode node = (ConcatenationNode) regexNode.parent;
             for (RegexNode r : node.getList()) {
@@ -148,7 +161,6 @@ public class RegexTranslator {
     private static RegexNode follow(RegexNode regexNode,
                                     List<RegexNode> subexpressions,
                                     Set<RegexNode> visited) {
-
         /* f(G|H) = f(G|H) if G|H is a subexpression */
         if (regexNode instanceof UnionNode) {
             visited.add(regexNode);
@@ -158,14 +170,11 @@ public class RegexTranslator {
                 return follow(regexNode.parent, subexpressions, visited);
             }
         /* f(G*) = Gf(F*) if G* is a subexpression */
-        } else if (regexNode.parent !=  null && regexNode instanceof StarNode) {
+        } else if (regexNode instanceof StarNode) {
             visited.add(((StarNode) regexNode).getMyRegex1());
             visited.add(regexNode);
             subexpressions.add(((StarNode) regexNode).getMyRegex1());
             addRemainingIfCan(regexNode, subexpressions, visited);
-            return follow(regexNode.parent, subexpressions, visited);
-        } else if (regexNode.parent instanceof StarNode) {
-            visited.add(regexNode);
             return follow(regexNode.parent, subexpressions, visited);
         }
 
@@ -181,9 +190,10 @@ public class RegexTranslator {
     private static void addRemainingIfCan(RegexNode regexNode,
                                           List<RegexNode> subexpressions,
                                           Set<RegexNode> visited) {
-        if (regexNode.parent instanceof ConcatenationNode) {
-            ConcatenationNode concat = (ConcatenationNode) regexNode.parent;
-            int idx = concat.getList().indexOf(regexNode);
+        RegexNode current = regexNode;
+        while (current.parent instanceof ConcatenationNode) {
+            ConcatenationNode concat = (ConcatenationNode) current.parent;
+            int idx = concat.getList().indexOf(current);
             assert idx != -1;
 
             for (int i = idx + 1; i < concat.getList().size(); i++) {
@@ -194,6 +204,8 @@ public class RegexTranslator {
                     subexpressions.add(node);
                 }
             }
+
+            current = current.parent;
         }
     }
 
@@ -205,7 +217,7 @@ public class RegexTranslator {
         child.parent = parent;
         if (child instanceof AnchorNode) {
             AnchorNode node = (AnchorNode) child;
-            setParents(node.getMyRegex1(), node);
+//            setParents(node.getMyRegex1(), node);
         } else if (child instanceof AtomicGroupNode) {
             AtomicGroupNode node = (AtomicGroupNode) child;
             setParents(node.myRegex1, node);

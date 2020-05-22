@@ -15,6 +15,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.*;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import theory.intervals.UnaryCharIntervalSolver;
 
 /**
  * CharPred: a set of characters represented as contiguous intervals
@@ -164,8 +165,14 @@ public class CharPred extends ICharPred{
 
 	@Override
 	public String toString() {
+		Optional<Character> opt = new UnaryCharIntervalSolver().MkNot(this).getSingleChar();
+		if (opt.isPresent()) {
+			return String.format("[¬%c]", opt.get());
+		}
+
 		StringBuilder sb = new StringBuilder();
 		sb.append("[");
+
 		for (ImmutablePair<Character, Character> pair : intervals) {
 			if (pair.left == pair.right)
 				sb.append(printChar(pair.left));
@@ -176,6 +183,21 @@ public class CharPred extends ICharPred{
 			}
 		}
 		sb.append("]");
+
+		return sb.toString();
+	}
+
+	public String toRaw() {
+		StringBuilder sb = new StringBuilder();
+		for (ImmutablePair<Character, Character> pair : intervals) {
+			if (pair.left == pair.right)
+				sb.append(printChar(pair.left));
+			else {
+				sb.append(printChar(pair.left));
+				sb.append("-");
+				sb.append(printChar(pair.right));
+			}
+		}
 
 		return sb.toString();
 	}

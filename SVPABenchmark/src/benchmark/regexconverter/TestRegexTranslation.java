@@ -5,6 +5,7 @@ import automata.safa.SAFA;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
+import utilities.Pair;
 
 import java.util.Arrays;
 import java.util.List;
@@ -134,6 +135,10 @@ public class TestRegexTranslation {
         RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
         SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
 
+        StringBuilder sb = new StringBuilder();
+        translated.toRaw(sb);
+        assertEquals("((a)|((?!((a))))((a)(a)))", sb.toString());
+
         List<String> strings = Arrays.asList("", "a", "aa");
         Utils.validateFullMatchRegexInputStrings(safa, "a|(?!a)aa", strings);
     }
@@ -144,6 +149,10 @@ public class TestRegexTranslation {
 
         RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
         SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
+
+        StringBuilder sb = new StringBuilder();
+        translated.toRaw(sb);
+        assertEquals("((a)(a)|((?!((a)(a))))((a)))", sb.toString());
 
         List<String> strings = Arrays.asList("", "a", "aa");
         Utils.validateFullMatchRegexInputStrings(safa, "aa|(?!aa)a", strings);
@@ -336,6 +345,26 @@ public class TestRegexTranslation {
 
         List<String> strings = Arrays.asList("", "a", "aa", "aaa", "aaaa", "baaa");
         Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
+    }
+
+    @Test
+    public void testAtomicOperator16() throws TimeoutException {
+        List<Pair<String, List<String>>> tests = Arrays.asList(
+                new Pair<>("(a(b))_1(?>33|3)37", Arrays.asList("ab_1337", "ab_13337")),
+                new Pair<>("\\s*(?>\\/\\/.*\\n)*", Arrays.asList("   //\n", "     //")),
+                new Pair<>("<\\?(em|i)((?> +)[^>]*)?>", Arrays.asList("<?em>", "<?em   >", "<?em   >>")),
+                new Pair<>("(?>33|3)(?:3)(?>33|3)3", Arrays.asList("33333", "333333", "3333", "3333333")),
+                new Pair<>("(?>[a-zA-Z_]\\w*(?>[?!])?)(:)(?!:)", Arrays.asList("a12:", "a12 2")),
+                new Pair<>("<td>(?>(.+)<\\/td>)", Arrays.asList("<td>a</td>", "<td></td>", "<td></td></td>")),
+
+                new Pair<>("(?>a?)a", Arrays.asList("", "a", "aa")),
+                new Pair<>("(?>33|3(?>(3)))", Arrays.asList("33", "333"))
+        );
+
+        for (Pair<String, List<String>> test : tests) {
+            SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(test.first);
+            Utils.validateFullMatchRegexInputStrings(safa, test.first, test.second);
+        }
     }
 
 }

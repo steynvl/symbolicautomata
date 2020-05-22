@@ -1,7 +1,12 @@
 package benchmark.regexconverter;
 
+import automata.safa.SAFA;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
+import theory.characters.CharPred;
+import theory.intervals.SubMatchUnaryCharIntervalSolver;
+import theory.intervals.UnaryCharIntervalSolver;
+import utilities.Pair;
 
 import java.util.Arrays;
 
@@ -147,6 +152,54 @@ public class TestFullMatchSAFA {
     public void testNestedNegativeLookaheads() throws TimeoutException {
         Utils.validateFullMatchRegexInputStrings("a(?!b(?!c))..",
                 Arrays.asList("abc"), Arrays.asList("ada", "abe"));
+    }
+
+    @Test
+    public void testFullMatchAnchors() throws TimeoutException {
+        String regex = "(?=(ab)*b)(?=(a|b)*bba*)a";
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
+//        System.out.println(safa.getDot("safa"));
+
+//        regex = "((?=a*b$)a)*b$";
+//        safa = Utils.constructFullMatchFromRegex(regex);
+//        System.out.println(safa.getDot("safa"));
+
+        regex = "((?=a*b$)ab*)*b$";
+        safa = Utils.constructFullMatchFromRegex(regex);
+        System.out.println(safa.getDot("safa"));
+    }
+
+    @Test
+    public void testSubMatchAnchors() throws TimeoutException {
+        String regex = "(?=(ab)*b)(?=(a|b)*bba*)a";
+        Pair<SAFA<CharPred, Character>, SubMatchUnaryCharIntervalSolver> p = RegexSubMatching.constructSubMatchingSAFA(regex);
+
+//        System.out.println(p.first.getDot("safa"));
+
+//        regex = "((?=a*b$)a)*b$";
+//        p = RegexSubMatching.constructSubMatchingSAFA(regex);
+//        System.out.println(p.first.getDot("safa"));
+        regex = "((?=a*b$)ab*)*b$";
+        p = RegexSubMatching.constructSubMatchingSAFA(regex);
+        System.out.println(p.first.getDot("safa"));
+    }
+
+    @Test
+    public void testBrinkIdea() throws TimeoutException {
+        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("(a|b)*c");
+        System.out.println(safa.getDot("safa"));
+//        SAFA<CharPred, Character> del = Utils.constructFullMatchFromRegex("#?");
+//        SAFA<CharPred, Character> shuffle = SAFA.shuffle(safa, del, new UnaryCharIntervalSolver());
+//        System.out.println(shuffle.getDot("shuffle"));
+//        System.out.printf("Shuffle states = %d\n", shuffle.getStates().size());
+//        System.out.printf("Shuffle transitions = %d\n", shuffle.getTransitions().size());
+
+        SAFA<CharPred, Character> manual = Utils.constructFullMatchFromRegex("#?(a#?|b#?)*c#?");
+        SAFA<CharPred, Character> manualNoEps = SAFA.removeEpsilonMovesFrom(manual, new UnaryCharIntervalSolver());
+        System.out.println(manualNoEps.getDot("manualNoEps"));
+        System.out.printf("Shuffle states = %d\n", manualNoEps.getStates().size());
+        System.out.printf("Shuffle transitions = %d\n", manualNoEps.getTransitions().size());
+//        System.out.println(SAFA.isEquivalent(shuffle, manualNoEps, new UnaryCharIntervalSolver(), SAFA.getBooleanExpressionFactory()));
     }
 
 }

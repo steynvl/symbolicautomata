@@ -84,6 +84,12 @@ public class Utils {
         return nodes.get(0);
     }
 
+    public static String translateRegex(String regex) throws TimeoutException {
+        StringBuilder sb = new StringBuilder();
+        RegexConverter.toSAFA(parseRegex(regex), new UnaryCharIntervalSolver(), null, sb);
+        return sb.toString();
+    }
+
     public static String regexToString(RegexNode node) {
         StringBuilder sb = new StringBuilder();
         node.toString(sb);

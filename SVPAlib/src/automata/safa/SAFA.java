@@ -206,26 +206,29 @@ public class SAFA<P, S> {
 
     // Adds a transition to the SAFA
     public void addTransition(SAFAMove<P, S> transition, BooleanAlgebra<P, S> ba, boolean skipSatCheck) throws TimeoutException {
-        transitionCount++;
+        if (transition.isSatisfiable(ba)) {
 
-        /* we remove the transition.isSatisfiable(ba) check to show infeasible paths in the SAFA */
-        if (transition.from > maxStateId)
-            maxStateId = transition.from;
-        if (transition.maxState > maxStateId)
-            maxStateId = transition.maxState;
+            transitionCount++;
 
-        states.add(transition.from);
-        states.addAll(transition.to.getStates());
+            /* we remove the transition.isSatisfiable(ba) check to show infeasible paths in the SAFA */
+            if (transition.from > maxStateId)
+                maxStateId = transition.from;
+            if (transition.maxState > maxStateId)
+                maxStateId = transition.maxState;
 
-        if (!transition.isEpsilonTransition()) {
-            getInputMovesFrom(transition.from).add((SAFAInputMove<P, S>) transition);
-            for (Integer to : transition.to.getStates()) {
-                getInputMovesTo(to).add((SAFAInputMove<P, S>) transition);
-            }
-        } else {
-            getEpsilonFrom(transition.from).add((SAFAEpsilon<P, S>) transition);
-            for (Integer to : transition.to.getStates()) {
-                getEpsilonTo(to).add((SAFAEpsilon<P, S>) transition);
+            states.add(transition.from);
+            states.addAll(transition.to.getStates());
+
+            if (!transition.isEpsilonTransition()) {
+                getInputMovesFrom(transition.from).add((SAFAInputMove<P, S>) transition);
+                for (Integer to : transition.to.getStates()) {
+                    getInputMovesTo(to).add((SAFAInputMove<P, S>) transition);
+                }
+            } else {
+                getEpsilonFrom(transition.from).add((SAFAEpsilon<P, S>) transition);
+                for (Integer to : transition.to.getStates()) {
+                    getEpsilonTo(to).add((SAFAEpsilon<P, S>) transition);
+                }
             }
         }
     }
@@ -447,6 +450,26 @@ public class SAFA<P, S> {
         lookaheadFinalStates.addAll(aut.finalStates);
 
         return MkSAFA(transitions, initialState, finalStates, lookaheadFinalStates, ba);
+    }
+
+    public static <A, B> SAFA<A, B> endAnchor(BooleanAlgebra<A, B> ba) throws TimeoutException {
+        /* TODO handle empty case */
+
+        BooleanExpressionFactory<PositiveBooleanExpression> pb = SAFA.getBooleanExpressionFactory();
+
+        /* (?!.) */
+        Collection<SAFAMove<A, B>> lookaheadTransitions = new ArrayList<>();
+        PositiveBooleanExpression lookaheadInitial = pb.MkState(0);
+        Collection<Integer> lookaheadFinal = new HashSet<>();
+        lookaheadFinal.add(0);
+//        lookaheadTransitions.add(new SAFAInputMove<>(0, pb.MkState(1), ba.True()));
+//        lookaheadTransitions.add(new SAFAInputMove<>(0, pb.MkState(1), ba.True()));
+
+        SAFA<A, B> aut = MkSAFA(lookaheadTransitions, lookaheadInitial, lookaheadFinal, new HashSet<>(), ba);
+
+        return aut;
+
+//        return positiveLookAhead(aut, ba);
     }
 
     public static <A, B> SAFA<A, B> dot(BooleanAlgebra<A, B> booleanAlgebra) throws TimeoutException {
