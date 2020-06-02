@@ -1,6 +1,5 @@
 package benchmark.regexconverter;
 
-import RegexParser.RegexParserProvider;
 import automata.safa.BooleanExpressionFactory;
 import automata.safa.SAFA;
 import automata.safa.booleanexpression.PositiveBooleanExpression;
@@ -56,7 +55,7 @@ public class TestSubMatchEquivalence {
 
         System.out.println(safa.getDot("safa"));
 
-//        testEquivalence(rsm, false, Arrays.asList());
+//        testEquivalence(rsm, false, Arrays.asList(Utils.lOfS(String.format("b%cb", delimiter))));
     }
 
     @Test
@@ -82,8 +81,7 @@ public class TestSubMatchEquivalence {
     private void testEquivalence(RegexSubMatching rsm,
                                  boolean equivalent,
                                  List<List<Character>> witnesses) throws TimeoutException {
-        /* TODO still need to modify algorithm for checking equivalence for SAFA with eps transitions */
-        // testEquivalence(rsm, equivalent, witnesses, false);
+//        testEquivalence(rsm, equivalent, witnesses, false);
 
         testEquivalence(rsm, equivalent, witnesses, true);
     }
@@ -98,11 +96,15 @@ public class TestSubMatchEquivalence {
         SAFA<CharPred, Character> safa2 = removeEpsilons ? SAFA.removeEpsilonMovesFrom(rsm.getSAFA02(), rsm.getSolver()) : rsm.getSAFA02();
 
         Pair<Boolean, List<Character>> equiv = SAFA.isEquivalent(safa1, safa2, unarySolver, boolExpr);
+
+//        boolean eq = SAFA.areReverseEquivalent(safa1, safa2, unarySolver);
+//        assertEquals(equivalent, eq);
+
         assertEquals(equivalent, equiv.first);
 
-        if (!equivalent && removeEpsilons) {
-            assertTrue(witnesses.contains(equiv.second));
-        }
+//        if (!equivalent && removeEpsilons) {
+//            assertTrue(witnesses.contains(equiv.second));
+//        }
     }
 
 }

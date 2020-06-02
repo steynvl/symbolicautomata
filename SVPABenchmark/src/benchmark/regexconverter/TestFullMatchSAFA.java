@@ -4,7 +4,7 @@ import automata.safa.SAFA;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
-import theory.intervals.SubMatchUnaryCharIntervalSolver;
+import theory.intervals.HashEncodingUnaryCharIntervalSolver;
 import theory.intervals.UnaryCharIntervalSolver;
 import utilities.Pair;
 
@@ -172,7 +172,7 @@ public class TestFullMatchSAFA {
     @Test
     public void testSubMatchAnchors() throws TimeoutException {
         String regex = "(?=(ab)*b)(?=(a|b)*bba*)a";
-        Pair<SAFA<CharPred, Character>, SubMatchUnaryCharIntervalSolver> p = RegexSubMatching.constructSubMatchingSAFA(regex);
+        Pair<SAFA<CharPred, Character>, HashEncodingUnaryCharIntervalSolver> p = RegexSubMatching.constructSubMatchingSAFA(regex);
 
 //        System.out.println(p.first.getDot("safa"));
 

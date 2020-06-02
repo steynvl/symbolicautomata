@@ -7,7 +7,7 @@ import benchmark.regexconverter.RegexConverter;
 import benchmark.regexconverter.RegexSubMatching;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
-import theory.intervals.SubMatchUnaryCharIntervalSolver;
+import theory.intervals.HashEncodingUnaryCharIntervalSolver;
 import theory.intervals.UnaryCharIntervalSolver;
 import utilities.Pair;
 
@@ -19,7 +19,7 @@ public class SAFAProvider {
     private UnaryCharIntervalSolver fullMatchSolver = new UnaryCharIntervalSolver();
 
     private SAFA<CharPred, Character> subMatchSAFA = null;
-    private SubMatchUnaryCharIntervalSolver subMatchSolver;
+    private HashEncodingUnaryCharIntervalSolver subMatchSolver;
 
     private String regex;
 
@@ -47,7 +47,7 @@ public class SAFAProvider {
     public SAFA<CharPred, Character> getSubMatchSAFA() {
         if (subMatchSAFA == null) {
             try {
-                Pair<SAFA<CharPred, Character>, SubMatchUnaryCharIntervalSolver> p = RegexSubMatching.constructSubMatchingSAFA(regex);
+                Pair<SAFA<CharPred, Character>, HashEncodingUnaryCharIntervalSolver> p = RegexSubMatching.constructSubMatchingSAFA(regex);
                 subMatchSAFA = p.first;
                 subMatchSolver = p.second;
             } catch (TimeoutException e) {
@@ -58,7 +58,7 @@ public class SAFAProvider {
         return subMatchSAFA;
     }
 
-    public SubMatchUnaryCharIntervalSolver getSubMatchSolver() {
+    public HashEncodingUnaryCharIntervalSolver getSubMatchSolver() {
         if (subMatchSAFA == null) {
             getSubMatchSAFA();
         }

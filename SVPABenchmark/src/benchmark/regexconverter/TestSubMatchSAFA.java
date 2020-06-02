@@ -5,7 +5,7 @@ import benchmark.SAFAProvider;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
-import theory.intervals.SubMatchUnaryCharIntervalSolver;
+import theory.intervals.HashEncodingUnaryCharIntervalSolver;
 import utilities.Pair;
 
 import java.util.Arrays;
@@ -131,7 +131,7 @@ public class TestSubMatchSAFA {
 
     private void validateStrings(String regex,
                                  SAFA<CharPred, Character> safa,
-                                 SubMatchUnaryCharIntervalSolver solver,
+                                 HashEncodingUnaryCharIntervalSolver solver,
                                  List<String> strings) throws TimeoutException {
         /* compile regex to java.util.regex.Pattern to test our model against */
         Pattern pattern = Pattern.compile(regex);

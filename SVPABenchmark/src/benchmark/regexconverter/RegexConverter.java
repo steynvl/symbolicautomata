@@ -17,6 +17,8 @@ public class RegexConverter {
         return SAFAToRegex.toRegex(safa, solver);
     }
 
+
+
     public static SAFA<CharPred, Character> toSAFA(FormulaNode phi,
                                                    UnaryCharIntervalSolver unarySolver) throws TimeoutException {
         return SAFAConstruction.toSAFA(phi, unarySolver, null, new StringBuilder());

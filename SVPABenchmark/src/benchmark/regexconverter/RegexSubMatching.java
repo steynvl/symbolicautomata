@@ -9,7 +9,7 @@ import automata.safa.booleanexpression.PositiveBooleanExpression;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
-import theory.intervals.SubMatchUnaryCharIntervalSolver;
+import theory.intervals.HashEncodingUnaryCharIntervalSolver;
 import theory.intervals.UnaryCharIntervalSolver;
 import utilities.Pair;
 
@@ -17,7 +17,7 @@ import java.util.*;
 
 public class RegexSubMatching {
 
-    private SubMatchUnaryCharIntervalSolver solver;
+    private HashEncodingUnaryCharIntervalSolver solver;
 
     private Pair<Boolean, List<Character>> equivalency;
 
@@ -48,16 +48,18 @@ public class RegexSubMatching {
         return safa2;
     }
 
-    public SubMatchUnaryCharIntervalSolver getSolver() {
+    public HashEncodingUnaryCharIntervalSolver getSolver() {
         return solver;
     }
 
-    public static Pair<SAFA<CharPred, Character>, SubMatchUnaryCharIntervalSolver> constructSubMatchingSAFA(String regex) throws TimeoutException {
-        RegexNode node = Utils.parseRegex(regex);
+    public static Pair<SAFA<CharPred, Character>, HashEncodingUnaryCharIntervalSolver> constructSubMatchingSAFA(String regex) throws TimeoutException {
+        return constructSubMatchingSAFA(Utils.parseRegex(regex));
+    }
 
+    public static Pair<SAFA<CharPred, Character>, HashEncodingUnaryCharIntervalSolver> constructSubMatchingSAFA(RegexNode node) throws TimeoutException {
         Character delimiter = findDelimiterCandidate(node);
         delimiter = '#';
-        SubMatchUnaryCharIntervalSolver solver = new SubMatchUnaryCharIntervalSolver(delimiter);
+        HashEncodingUnaryCharIntervalSolver solver = new HashEncodingUnaryCharIntervalSolver(delimiter);
 
         RegexNode translated = RegexTranslator.translate(node);
 
@@ -67,8 +69,9 @@ public class RegexSubMatching {
         return new Pair<>(safa, solver);
     }
 
+
     private static SAFA<CharPred, Character> buildRemainder(Character delimiter,
-                                                            SubMatchUnaryCharIntervalSolver solver) throws TimeoutException {
+                                                            HashEncodingUnaryCharIntervalSolver solver) throws TimeoutException {
         BooleanExpressionFactory<PositiveBooleanExpression> boolExpr = SAFA.getBooleanExpressionFactory();
         Collection<SAFAMove<CharPred, Character>> transitions = new LinkedList<>();
         transitions.add(new SAFAInputMove<>(0, boolExpr.MkState(1), new CharPred(delimiter)));
@@ -86,7 +89,7 @@ public class RegexSubMatching {
         Character delimiter = findDelimiterCandidate(node1, node2);
 
         /* create custom solver to redefine dot symbol to not match explicit capturing brackets */
-        solver = new SubMatchUnaryCharIntervalSolver(delimiter);
+        solver = new HashEncodingUnaryCharIntervalSolver(delimiter);
 
         RegexNode translated1 = RegexTranslator.translate(node1);
         RegexNode translated2 = RegexTranslator.translate(node2);
@@ -172,7 +175,7 @@ public class RegexSubMatching {
             return solver.MkOr(cp, determineAlphabetOfRegex(((NegativeLookaheadNode) node).getMyRegex1()));
         } else if (node instanceof AtomicGroupNode) {
             return solver.MkOr(cp, determineAlphabetOfRegex(((AtomicGroupNode) node).getMyRegex1()));
-        } else if (node instanceof NormalCharNode || node instanceof EscapedCharNode || node instanceof MetaCharNode) {
+        } else if (node instanceof CharNode) {
             CharNode charNode = (CharNode) node;
             return solver.MkOr(cp, new CharPred(charNode.getChar()));
         } else if (node instanceof CharacterClassNode || node instanceof NotCharacterClassNode) {

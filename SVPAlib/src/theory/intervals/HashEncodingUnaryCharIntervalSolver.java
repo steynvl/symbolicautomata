@@ -3,13 +3,13 @@ package theory.intervals;
 import theory.characters.CharPred;
 import theory.characters.StdCharPred;
 
-public class SubMatchUnaryCharIntervalSolver extends UnaryCharIntervalSolver {
+public class HashEncodingUnaryCharIntervalSolver extends UnaryCharIntervalSolver {
 
     private CharPred redefinedTrue;
 
-    private Character delimiter;
+    private char delimiter;
 
-    public SubMatchUnaryCharIntervalSolver(Character delimiter) {
+    public HashEncodingUnaryCharIntervalSolver(char delimiter) {
         super();
         this.delimiter = delimiter;
         redefinedTrue = MkAnd(StdCharPred.TRUE, MkNot(new CharPred(delimiter)));
