@@ -2,22 +2,23 @@ package benchmark.regexconverter;
 
 import RegexParser.*;
 import automata.safa.SAFA;
+import benchmark.SAFAProvider;
 import org.junit.Test;
-import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
 import utilities.Pair;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
 public class TestRegexTranslation {
 
     @Test
-    public void testFollow01() {
+    public void testFollow01() throws RegexTranslationException {
         String regex = "(a|aa)bd[0-9].*(m|k)\\d";
-        RegexNode root = Utils.parseRegex(regex);
+        RegexNode root = TestUtils.parseRegex(regex);
         RegexTranslator.setParents(root);
 
         ConcatenationNode node1 = (ConcatenationNode) root;
@@ -30,9 +31,9 @@ public class TestRegexTranslation {
     }
 
     @Test
-    public void testFollow02() {
+    public void testFollow02() throws RegexTranslationException {
         String regex = "((a|b)*b|b)c.d*";
-        RegexNode root = Utils.parseRegex(regex);
+        RegexNode root = TestUtils.parseRegex(regex);
         RegexTranslator.setParents(root);
 
         ConcatenationNode node1 = (ConcatenationNode) root;
@@ -50,9 +51,9 @@ public class TestRegexTranslation {
     }
 
     @Test
-    public void testFollow03() {
+    public void testFollow03() throws RegexTranslationException {
         String regex = "((a|b)*b|b)c(a|b(a|a)bb((a|b)a)).d*";
-        RegexNode root = Utils.parseRegex(regex);
+        RegexNode root = TestUtils.parseRegex(regex);
         RegexTranslator.setParents(root);
 
         ConcatenationNode node1 = (ConcatenationNode) root;
@@ -72,9 +73,9 @@ public class TestRegexTranslation {
     }
 
     @Test
-    public void testFollow04() {
+    public void testFollow04() throws RegexTranslationException {
         String regex = "(((a(ab|c)k.\\d(aa|bb)|k))|c)end";
-        RegexNode root = Utils.parseRegex(regex);
+        RegexNode root = TestUtils.parseRegex(regex);
         RegexTranslator.setParents(root);
 
         ConcatenationNode node1 = (ConcatenationNode) root;
@@ -95,24 +96,23 @@ public class TestRegexTranslation {
     }
 
     @Test
-    public void testFollow05() {
+    public void testFollow05() throws RegexTranslationException {
         String regex = "(?>a*(b*a*)(a*b*))";
-        RegexNode root = Utils.parseRegex(regex);
+        RegexNode root = TestUtils.parseRegex(regex);
         RegexTranslator.setParents(root);
 
         ConcatenationNode node1 = (ConcatenationNode) root;
         AtomicGroupNode node2 = (AtomicGroupNode ) node1.getList().get(0);
         ConcatenationNode node3 = (ConcatenationNode) node2.getMyRegex1();
 
-        assertEquals("((a)(((b)*)((a)*)))(((a)*)((b)*))" +
-                        "",
+        assertEquals("((a)(((b)*)((a)*)))(((a)*)((b)*))",
                 RegexTranslator.printNode(RegexTranslator.follow(node3.getList().get(0))));
     }
 
     @Test
-    public void testFollow07() {
+    public void testFollow07() throws RegexTranslationException {
         String regex = "(?>a*(b*c*)(d*e*))";
-        RegexNode root = Utils.parseRegex(regex);
+        RegexNode root = TestUtils.parseRegex(regex);
         RegexTranslator.setParents(root);
 
         ConcatenationNode node1 = (ConcatenationNode) root;
@@ -129,241 +129,223 @@ public class TestRegexTranslation {
     }
 
     @Test
-    public void testRegexTranslation01() throws TimeoutException {
+    public void testRegexTranslation01() throws Exception {
         String regex = "a|aa";
 
-        RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
+        RegexNode translated = RegexTranslator.translate(TestUtils.parseRegex(regex));
 
         StringBuilder sb = new StringBuilder();
         translated.toRaw(sb);
         assertEquals("((a)|((?!((a))))((a)(a)))", sb.toString());
 
-        List<String> strings = Arrays.asList("", "a", "aa");
-        Utils.validateFullMatchRegexInputStrings(safa, "a|(?!a)aa", strings);
+        SAFAProvider safaProvider = SAFAProvider.fromRegexNode(translated);
+        SAFA<CharPred, Character> safa = safaProvider.getSAFA();
+
+        List<LookaheadWord> strings = Arrays.asList(
+                new LookaheadWord(""), new LookaheadWord("a"),
+                new LookaheadWord("aa"), new LookaheadWord("a", "a")
+        );
+
+        TestUtils.validateSubMatch(regex, safa, safaProvider.getSolver(), strings);
     }
 
     @Test
-    public void testRegexTranslation02() throws TimeoutException {
+    public void testRegexTranslation02() throws Exception {
         String regex = "aa|a";
 
-        RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
+        RegexNode translated = RegexTranslator.translate(TestUtils.parseRegex(regex));
 
         StringBuilder sb = new StringBuilder();
         translated.toRaw(sb);
         assertEquals("((a)(a)|((?!((a)(a))))((a)))", sb.toString());
 
-        List<String> strings = Arrays.asList("", "a", "aa");
-        Utils.validateFullMatchRegexInputStrings(safa, "aa|(?!aa)a", strings);
+        SAFAProvider safaProvider = SAFAProvider.fromRegexNode(translated);
+        SAFA<CharPred, Character> safa = safaProvider.getSAFA();
+
+        List<LookaheadWord> strings = Arrays.asList(
+                new LookaheadWord(""), new LookaheadWord("a"),
+                new LookaheadWord("aa"), new LookaheadWord("a", "a")
+        );
+
+        TestUtils.validateSubMatch(regex, safa, safaProvider.getSolver(), strings);
     }
 
     @Test
-    public void testRegexTranslation03() throws TimeoutException {
+    public void testRegexTranslation03() throws Exception {
         String regex = "a*(ab)*b";
-        String java = String.format("(?>%s)", regex);
 
-        RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
+        RegexNode translated = RegexTranslator.translate(TestUtils.parseRegex(regex));
 
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
+        SAFAProvider safaProvider = SAFAProvider.fromRegexNode(translated);
+        SAFA<CharPred, Character> safa = safaProvider.getSAFA();
 
-        List<String> strings = Arrays.asList("b", "ab", "aab", "abb");
-        Utils.validateFullMatchRegexInputStrings(safa, java, strings);
+        List<LookaheadWord> strings = Arrays.asList(
+                new LookaheadWord("b"), new LookaheadWord("ab"),
+                new LookaheadWord("aab"), new LookaheadWord("abb"),
+                new LookaheadWord("aab", "b"), new LookaheadWord("aa", "bb")
+        );
+
+        TestUtils.validateSubMatch(regex, safa, safaProvider.getSolver(), strings);
     }
 
     @Test
-    public void testRegexTranslation04() throws TimeoutException {
+    public void testRegexTranslation04() throws Exception {
         String regex = "a*(b|abb)";
-        String java = String.format("(?>%s)", regex);
 
-        RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
+        RegexNode translated = RegexTranslator.translate(TestUtils.parseRegex(regex));
 
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
+        SAFAProvider safaProvider = SAFAProvider.fromRegexNode(translated);
+        SAFA<CharPred, Character> safa = safaProvider.getSAFA();
 
-        List<String> strings = Arrays.asList("", "b", "ab", "aab", "abb");
-        Utils.validateFullMatchRegexInputStrings(safa, java, strings);
+        List<LookaheadWord> strings = Arrays.asList(
+                new LookaheadWord(""), new LookaheadWord("b"),
+                new LookaheadWord("ab"), new LookaheadWord("aab"),
+                new LookaheadWord("aa", "bb"), new LookaheadWord("a", "bb"),
+                new LookaheadWord("ab", "b")
+        );
+
+        TestUtils.validateSubMatch(regex, safa, safaProvider.getSolver(), strings);
     }
 
     @Test
-    public void testRegexTranslation06() throws TimeoutException {
+    public void testRegexTranslation06() throws Exception {
         String regex = "a*(abb|b)";
-        String java = String.format("(?>%s)", regex);
 
-        RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
+        RegexNode translated = RegexTranslator.translate(TestUtils.parseRegex(regex));
 
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
+        SAFAProvider safaProvider = SAFAProvider.fromRegexNode(translated);
+        SAFA<CharPred, Character> safa = safaProvider.getSAFA();
 
-        List<String> strings = Arrays.asList("", "b", "ab", "aab", "abb");
-        Utils.validateFullMatchRegexInputStrings(safa, java, strings);
+        List<LookaheadWord> strings = Arrays.asList(
+                new LookaheadWord(""), new LookaheadWord("b"),
+                new LookaheadWord("ab"), new LookaheadWord("aab"),
+                new LookaheadWord("aa", "bb"), new LookaheadWord("a", "bb"),
+                new LookaheadWord("ab", "b")
+        );
+
+        TestUtils.validateSubMatch(regex, safa, safaProvider.getSolver(), strings);
     }
 
     @Test
-    public void testRegexTranslation07() throws TimeoutException {
+    public void testRegexTranslation07() throws Exception {
         String regex = "abb|a*(ab)*b";
-        String java = String.format("(?>%s)", regex);
 
-        RegexNode translated = RegexTranslator.translate(Utils.parseRegex(regex));
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromNode(translated);
+        RegexNode translated = RegexTranslator.translate(TestUtils.parseRegex(regex));
 
-        List<String> strings = Arrays.asList("", "b", "ab", "aab", "abb");
-        Utils.validateFullMatchRegexInputStrings(safa, java, strings);
+        SAFAProvider safaProvider = SAFAProvider.fromRegexNode(translated);
+        SAFA<CharPred, Character> safa = safaProvider.getSAFA();
+
+        List<LookaheadWord> strings = Arrays.asList(
+                new LookaheadWord(""), new LookaheadWord("b"),
+                new LookaheadWord("ab"), new LookaheadWord("aab"),
+                new LookaheadWord("aa", "bb"), new LookaheadWord("a", "bb"),
+                new LookaheadWord("ab", "b")
+        );
+
+        TestUtils.validateSubMatch(regex, safa, safaProvider.getSolver(), strings);
     }
 
     @Test
-    public void testAtomicOperator01() throws TimeoutException {
+    public void testAtomicOperator01() throws Exception {
         String regex = "a*(?>bc|b)c";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
 
-        List<String> strings = Arrays.asList("abc");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
+        RegexNode rewla = RegexTranslator.removeAtomicOperators(regex);
 
-    @Test
-    public void testAtomicOperator02() throws TimeoutException {
-        String regex = "(?>a*)";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("a", "aa");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-
-    @Test
-    public void testAtomicOperator03() throws TimeoutException {
-        String regex = "(?>\\s*(\\S\\S*\\s*))(\\s\\s*\\S\\S*)";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("", "  aaa  aaa");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-
-    @Test
-    public void testAtomicOperator04() throws TimeoutException {
-        String regex = "(?>\\s*(\\S\\S*\\s*))(\\s\\s*\\S\\S*)";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("", "  aaa  aaa");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-
-    @Test
-    public void testAtomicOperator05() throws TimeoutException {
-        String regex = "(?>n|n1)@gmail\\.com";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("n@gmail.com", "n1@gmail.com");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-
-    @Test
-    public void testAtomicOperator06() throws TimeoutException {
-        String regex = "a(?>bc|b)c";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("abc");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-
-    @Test
-    public void testAtomicOperator07() throws TimeoutException {
-        String regex = "(?>\\W\\w*):";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("abc:", "", "a:", "2:", "1");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-    @Test
-    public void testAtomicOperator08() throws TimeoutException {
-        String regex = "(?>(\"|[^\"])*)";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("aa\"", "", "a:", "\"\"\"", "2:");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-    @Test
-    public void testAtomicOperator09() throws TimeoutException {
-        String regex = "(\\.\\d\\d(?>[1-9]?))\\d+";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList(".625", ".625000");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-
-    @Test
-    public void testAtomicOperator10() throws TimeoutException {
-        /* TODO fix, the optional operator seems to be breaking it! */
-//        String regex = "[a-z0-9]+(?>_[a-z0-9]+)?";
-//        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-//
-//        List<String> strings = Arrays.asList("", "azaaz", "a10ask_a");
-//        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-
-    @Test
-    public void testAtomicOperator11() throws TimeoutException {
-        String regex = "(?>a*(b*a*)(a*b*))";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("abab");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-    @Test
-    public void testAtomicOperator12() throws TimeoutException {
-        String regex = "(?>((a|b)*)*)b";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("", "ab", "aab", "b");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-
-    @Test
-    public void testAtomicOperator13() throws TimeoutException {
-        String regex = "(?>(a|b)*)*b";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("", "ab", "aab", "b");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-
-    @Test
-    public void testAtomicOperator14() throws TimeoutException {
-        String regex = "(?>(\\.|[^\"])*)";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        List<String> strings = Arrays.asList("a", "b", "aababab", "\"", "aababa\"");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
-    }
-
-    @Test
-    public void testAtomicOperator15() throws TimeoutException {
-        String regex = "(?>a*a)";
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(regex);
-
-        RegexNode regexNode = Utils.parseRegex("(?>a*a)a");
         StringBuilder sb = new StringBuilder();
-        regexNode.toString(sb);
-        System.out.println(sb.toString() + " <<<");
+        rewla.toRaw(sb);
+        assertEquals("((a)*)(((b)(c)|((?!((b)(c))))((b))))(c)", sb.toString());
 
-        List<String> strings = Arrays.asList("", "a", "aa", "aaa", "aaaa", "baaa");
-        Utils.validateFullMatchRegexInputStrings(safa, regex, strings);
+        SAFAProvider safaProvider = new SAFAProvider(rewla);
+        SAFA<CharPred, Character> safa = safaProvider.getSAFA();
+
+        List<LookaheadWord> strings = Arrays.asList(new LookaheadWord("abc"));
+
+        TestUtils.validateSubMatch(regex, safa, safaProvider.getSolver(), strings);
     }
 
     @Test
-    public void testAtomicOperator16() throws TimeoutException {
+    public void testAtomicOperator02() throws Exception {
+        String regex = "(?>a*)";
+
+        RegexNode rewla = RegexTranslator.removeAtomicOperators(regex);
+
+        SAFAProvider safaProvider = new SAFAProvider(rewla);
+        SAFA<CharPred, Character> safa = safaProvider.getSAFA();
+
+        List<LookaheadWord> strings = Arrays.asList(
+                new LookaheadWord("a"), new LookaheadWord("aa")
+        );
+
+        TestUtils.validateSubMatch(regex, safa, safaProvider.getSolver(), strings);
+    }
+
+    @Test
+    public void testAtomicOperator03() throws Exception {
+        String regex = "(?>\\s*(\\S\\S*\\s*))(\\s\\s*\\S\\S*)";
+
+        RegexNode rewla = RegexTranslator.removeAtomicOperators(regex);
+
+        SAFAProvider safaProvider = new SAFAProvider(rewla);
+        SAFA<CharPred, Character> safa = safaProvider.getSAFA();
+
+        List<LookaheadWord> strings = Arrays.asList(
+                new LookaheadWord(""), new LookaheadWord("  aaa   aaa")
+        );
+
+        TestUtils.validateSubMatch(regex, safa, safaProvider.getSolver(), strings);
+    }
+
+    @Test
+    public void testAtomicOperator16() throws Exception {
         List<Pair<String, List<String>>> tests = Arrays.asList(
                 new Pair<>("(a(b))_1(?>33|3)37", Arrays.asList("ab_1337", "ab_13337")),
                 new Pair<>("\\s*(?>\\/\\/.*\\n)*", Arrays.asList("   //\n", "     //")),
                 new Pair<>("<\\?(em|i)((?> +)[^>]*)?>", Arrays.asList("<?em>", "<?em   >", "<?em   >>")),
                 new Pair<>("(?>33|3)(?:3)(?>33|3)3", Arrays.asList("33333", "333333", "3333", "3333333")),
-                new Pair<>("(?>[a-zA-Z_]\\w*(?>[?!])?)(:)(?!:)", Arrays.asList("a12:", "a12 2")),
                 new Pair<>("<td>(?>(.+)<\\/td>)", Arrays.asList("<td>a</td>", "<td></td>", "<td></td></td>")),
-
                 new Pair<>("(?>a?)a", Arrays.asList("", "a", "aa")),
-                new Pair<>("(?>33|3(?>(3)))", Arrays.asList("33", "333"))
+                new Pair<>("(?>a*a)", Arrays.asList("", "a", "aa", "aaa", "aaaa", "baaa")),
+                new Pair<>("(?>(\\.|[^\"])*)", Arrays.asList("a", "b", "aababab", "\"", "aababa\"")),
+                new Pair<>("(?>a*(b*a*)(a*b*))", Arrays.asList("abab")),
+                new Pair<>("[a-z0-9]+(?>_[a-z0-9]+)?", Arrays.asList("", "azaaz", "a10ask_a")),
+                new Pair<>("(\\.\\d\\d(?>[1-9]?))\\d+", Arrays.asList(".625", ".625000")),
+                new Pair<>("(?>(\"|[^\"])*)", Arrays.asList("aa\"", "", "a:", "\"\"\"", "2:")),
+                new Pair<>("(?>\\W\\w*):", Arrays.asList("abc:", "", "a:", "2:", "1")),
+                new Pair<>("a(?>bc|b)c", Arrays.asList("abc")),
+                new Pair<>("(?>n|n1)@gmail\\.com", Arrays.asList("n@gmail.com", "n1@gmail.com"))
         );
 
         for (Pair<String, List<String>> test : tests) {
-            SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(test.first);
-            Utils.validateFullMatchRegexInputStrings(safa, test.first, test.second);
+            String aREwLA = test.first;
+            RegexNode REwLA = RegexTranslator.removeAtomicOperators(aREwLA);
+
+            SAFAProvider safaProvider = new SAFAProvider(REwLA);
+            SAFA<CharPred, Character> safa = safaProvider.getSAFA();
+
+            List<LookaheadWord> strings = test.second.stream().map(LookaheadWord::new).collect(Collectors.toList());
+
+            TestUtils.validateSubMatch(aREwLA, safa, safaProvider.getSolver(), strings);
+        }
+    }
+
+    @Test
+    public void testNestedAtomicOperator() {
+        List<String> atomicRegexes = Arrays.asList(
+                "(?>[a-zA-Z_]\\w*(?>[?!])?)(:)(?!:)",
+                "(?>33|3(?>(3)))",
+                "(?>(?>c))"
+        );
+
+        for (String regex : atomicRegexes) {
+            try {
+                RegexTranslator.removeAtomicOperators(regex);
+            } catch (RegexTranslationException e) {
+                String msg = "Nested atomic groups not supported.";
+                assertEquals(msg, e.getMessage());
+                continue;
+            }
+
+            fail();
         }
     }
 

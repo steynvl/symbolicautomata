@@ -1,36 +1,44 @@
 package benchmark.regexconverter;
 
 import RegexParser.*;
+import automata.AutomataException;
 import automata.safa.BooleanExpressionFactory;
 import automata.safa.SAFA;
 import automata.safa.SAFAInputMove;
 import automata.safa.SAFAMove;
+import automata.safa.booleanexpression.PositiveAnd;
 import automata.safa.booleanexpression.PositiveBooleanExpression;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
 import theory.characters.StdCharPred;
-import theory.intervals.UnaryCharIntervalSolver;
+import theory.intervals.HashStringEncodingUnaryCharIntervalSolver;
 
 import java.util.*;
 
 public class SAFAConstruction {
 
-    public static SAFA<CharPred, Character> toSAFA(FormulaNode phi,
-                                                   UnaryCharIntervalSolver unarySolver) throws TimeoutException {
-        return toSAFA(phi, unarySolver, null, new StringBuilder());
-    }
+    private static final BooleanExpressionFactory<PositiveBooleanExpression> pb = SAFA.getBooleanExpressionFactory();
 
     public static SAFA<CharPred, Character> toSAFA(FormulaNode phi,
-                                                   UnaryCharIntervalSolver unarySolver,
-                                                   Character delimiter) throws TimeoutException {
-        return toSAFA(phi, unarySolver, delimiter, new StringBuilder());
+                                                   HashStringEncodingUnaryCharIntervalSolver solver)
+            throws TimeoutException, AutomataException {
+        return SAFA.concatenate(_toSAFA(phi, solver), constructMainTail(solver), solver);
     }
 
-    public static SAFA<CharPred, Character> toSAFA(FormulaNode phi,
-                                                   UnaryCharIntervalSolver unarySolver,
-                                                   Character delimiter,
-                                                   StringBuilder sb)
+    private static SAFA<CharPred, Character> constructMainTail(HashStringEncodingUnaryCharIntervalSolver solver)
             throws TimeoutException {
+        PositiveBooleanExpression to = pb.MkState(1);
+
+        Collection<SAFAMove<CharPred, Character>> transitions = new LinkedList<>();
+        transitions.add(new SAFAInputMove<>(0, to, new CharPred(solver.getDelimiter())));
+        transitions.add(new SAFAInputMove<>(1, to, solver.True()));
+
+        return SAFA.MkSAFA(transitions, pb.MkState(0), Arrays.asList(1), new ArrayList<>(), solver);
+    }
+
+    private static SAFA<CharPred, Character> _toSAFA(FormulaNode phi,
+                                                     HashStringEncodingUnaryCharIntervalSolver unarySolver)
+            throws TimeoutException, AutomataException {
         BooleanExpressionFactory<PositiveBooleanExpression> boolExpr = SAFA.getBooleanExpressionFactory();
         SAFA<CharPred, Character> outputSAFA = null;
 
@@ -39,11 +47,8 @@ public class SAFAConstruction {
 
             UnionNode cphi = (UnionNode) phi;
 
-            sb.append("(");
-            SAFA<CharPred, Character> left = toSAFA(cphi.getMyRegex1(), unarySolver, delimiter, sb);
-            sb.append("|");
-            SAFA<CharPred, Character> right = toSAFA(cphi.getMyRegex2(), unarySolver, delimiter, sb);
-            sb.append(")");
+            SAFA<CharPred, Character> left = _toSAFA(cphi.getMyRegex1(), unarySolver);
+            SAFA<CharPred, Character> right = _toSAFA(cphi.getMyRegex2(), unarySolver);
 
             outputSAFA = SAFA.union(left, right, unarySolver);
 
@@ -60,47 +65,40 @@ public class SAFAConstruction {
             if (it.hasNext()) {
                 RegexNode regexNode = it.next();
 
-                iterateSAFA = toSAFA(regexNode, unarySolver, delimiter, sb);
+                iterateSAFA = _toSAFA(regexNode, unarySolver);
                 while (it.hasNext()) {
                     regexNode = it.next();
-                    SAFA<CharPred, Character> followingSAFA = toSAFA(regexNode, unarySolver, delimiter, sb);
+                    SAFA<CharPred, Character> followingSAFA = _toSAFA(regexNode, unarySolver);
 
                     iterateSAFA = SAFA.concatenate(iterateSAFA, followingSAFA, unarySolver);
                 }
             }
             return iterateSAFA;
         } else if (phi instanceof DotNode) {
-            sb.append(".");
             return SAFA.dot(unarySolver);
 
         } else if (phi instanceof AnchorNode) {
             AnchorNode cphi = (AnchorNode) phi;
             if (cphi.hasStartAnchor()) {
-                sb.append("^");
-//                outputSAFA = SAFA.getFullSAFA(unarySolver);
+                System.out.println("Ignoring start anchor in regex!");
             } else if (cphi.hasEndAnchor()) {
-                sb.append("$");
                 outputSAFA = SAFA.endAnchor(unarySolver);
             }
         } else if (phi instanceof StarNode) {
             // use SAFA.star() method
             StarNode cphi = (StarNode) phi;
-            sb.append("(");
-            SAFA<CharPred, Character> tempSAFA = toSAFA(cphi.getMyRegex1(), unarySolver, delimiter, sb);
-            sb.append(")*");
+            SAFA<CharPred, Character> tempSAFA = _toSAFA(cphi.getMyRegex1(), unarySolver);
             outputSAFA = SAFA.star(tempSAFA, unarySolver);
 
         } else if (phi instanceof PlusNode) {
             // expr+ = expr concatenate with expr*
             PlusNode cphi = (PlusNode) phi;
-            sb.append("(");
-            SAFA<CharPred, Character> tempSAFA = toSAFA(cphi.getMyRegex1(), unarySolver, delimiter, sb);
-            sb.append(")+");
+            SAFA<CharPred, Character> tempSAFA = _toSAFA(cphi.getMyRegex1(), unarySolver);
             outputSAFA = SAFA.concatenate(tempSAFA, SAFA.star(tempSAFA, unarySolver), unarySolver);
 
         } else if (phi instanceof OptionalNode) {
             OptionalNode cphi = (OptionalNode) phi;
-            SAFA<CharPred, Character> tempSAFA = toSAFA(cphi.getMyRegex1(), unarySolver, delimiter, sb);
+            SAFA<CharPred, Character> tempSAFA = _toSAFA(cphi.getMyRegex1(), unarySolver);
 
             // build an SAFA that only accepts the empty string
             Collection<SAFAMove<CharPred, Character>> transitions = new LinkedList<SAFAMove<CharPred, Character>>();
@@ -109,49 +107,50 @@ public class SAFAConstruction {
                     tempSAFA,
                     SAFA.MkSAFA(transitions, initial, Arrays.asList(0), new HashSet<>(), unarySolver), unarySolver
             );
-            sb.append("?");
 
         } else if (phi instanceof PositiveLookaheadNode) {
             PositiveLookaheadNode cphi = (PositiveLookaheadNode) phi;
-            sb.append("(?=");
-            SAFA<CharPred, Character> lookAhead = toSAFA(cphi.getMyRegex1(), unarySolver, delimiter, sb);
-            sb.append(")");
-            lookAhead = SAFA.concatenate(lookAhead, SAFA.star(SAFA.dot(unarySolver), unarySolver), unarySolver);
 
-            if (delimiter != null) {
-                lookAhead = shuffleInDelimiter(lookAhead, delimiter, unarySolver);
+            SAFA<CharPred, Character> lookAhead = _toSAFA(cphi.getMyRegex1(), unarySolver);
+
+            /* add #-labeled self loops to each "or" state */
+            addSelfLoops(lookAhead, unarySolver);
+
+            for (Integer fs : lookAhead.getFinalStates()) {
+                PositiveBooleanExpression to = pb.MkState(fs);
+                CharPred cp = unarySolver.MkOr(unarySolver.True(), new CharPred(unarySolver.getDelimiter()));
+                lookAhead.addTransition(new SAFAInputMove<>(fs, to, cp), unarySolver, true);
             }
 
             outputSAFA = SAFA.positiveLookAhead(lookAhead, unarySolver);
-
             return outputSAFA;
 
         } else if (phi instanceof NegativeLookaheadNode) {
             NegativeLookaheadNode cphi = (NegativeLookaheadNode) phi;
-            sb.append("(?!");
-            SAFA<CharPred, Character> lookAhead = toSAFA(cphi.getMyRegex1(), unarySolver, delimiter, sb);
-            sb.append(")");
 
-            lookAhead = SAFA.concatenate(lookAhead, SAFA.star(SAFA.dot(unarySolver), unarySolver), unarySolver);
-            lookAhead = lookAhead.negate(unarySolver);
+            SAFA<CharPred, Character> lookAhead = _toSAFA(cphi.getMyRegex1(), unarySolver);
 
-            if (delimiter != null) {
-                lookAhead = shuffleInDelimiter(lookAhead, delimiter, unarySolver);
+            for (Integer fs : lookAhead.getFinalStates()) {
+                PositiveBooleanExpression to = pb.MkState(fs);
+                lookAhead.addTransition(new SAFAInputMove<>(fs, to, unarySolver.True()), unarySolver, true);
             }
 
-            outputSAFA = SAFA.positiveLookAhead(lookAhead, unarySolver);
+            lookAhead = lookAhead.negate(unarySolver);
 
+            /* add #-labeled self loops to each "or" state */
+            addSelfLoops(lookAhead, unarySolver);
+
+            outputSAFA = SAFA.positiveLookAhead(lookAhead, unarySolver);
             return outputSAFA;
 
         } else if (phi instanceof AtomicGroupNode) {
-            AtomicGroupNode cphi = (AtomicGroupNode) phi;
-
-            RegexNode translated = RegexTranslator.translate(cphi.getMyRegex1());
-            outputSAFA = toSAFA(translated, unarySolver, delimiter, sb);
+            StringBuilder sb = new StringBuilder();
+            sb.append("AFA construction does not support atomic groups. ");
+            sb.append("Use RegexTranslator.removeAtomicOperators to convert aREwLA -> REwLA first.");
+            throw new AutomataException(sb.toString());
         } else if (phi instanceof NormalCharNode) {
             // make a SAFA that has a transition which accepts this char
             NormalCharNode cphi = (NormalCharNode) phi;
-            sb.append(cphi.getChar());
             Collection<SAFAMove<CharPred, Character>> transitions = new LinkedList<>();
             transitions.add(new SAFAInputMove<>(0, SAFA.getBooleanExpressionFactory().MkState(1), new CharPred(cphi.getChar())));
 
@@ -162,7 +161,6 @@ public class SAFAConstruction {
             EscapedCharNode cphi = (EscapedCharNode) phi;
             StringBuilder s = new StringBuilder();
             cphi.toRaw(s);
-            sb.append(s);
             Collection<SAFAMove<CharPred, Character>> transitions = new LinkedList<SAFAMove<CharPred, Character>>();
             transitions.add(new SAFAInputMove<>(
                     0, SAFA.getBooleanExpressionFactory().MkState(1), new CharPred(cphi.getChar()))
@@ -173,7 +171,6 @@ public class SAFAConstruction {
             MetaCharNode cphi = (MetaCharNode) phi;
             StringBuilder s = new StringBuilder();
             cphi.toRaw(s);
-            sb.append(s);
             Collection<SAFAMove<CharPred, Character>> transitions = new LinkedList<SAFAMove<CharPred, Character>>();
             char meta = cphi.getChar();
             if (meta == 't') {
@@ -236,17 +233,13 @@ public class SAFAConstruction {
             List<IntervalNode> intervalList = cphi.getIntervals();
             Iterator<IntervalNode> it = intervalList.iterator();
             CharPred predicate = unarySolver.False();
-            sb.append("[");
             if (it.hasNext()) {
                 predicate = RegexConverter.getCharPred(it.next(), unarySolver);
-                sb.append(predicate.toRaw());
                 while (it.hasNext()) {
                     CharPred temp = RegexConverter.getCharPred(it.next(), unarySolver);
-                    sb.append(temp.toRaw());
                     predicate = unarySolver.MkOr(predicate, temp);
                 }
             }
-            sb.append("]");
             transitions.add(new SAFAInputMove<>(0, SAFA.getBooleanExpressionFactory().MkState(1), predicate));
             return SAFA.MkSAFA(transitions, boolExpr.MkState(0), Arrays.asList(1), new ArrayList<>(), unarySolver);
 
@@ -258,17 +251,13 @@ public class SAFAConstruction {
             List<IntervalNode> intervalList = cphi.getIntervals();
             Iterator<IntervalNode> it = intervalList.iterator();
             CharPred predicate = unarySolver.False();
-            sb.append("[^");
             if (it.hasNext()) {
                 predicate = RegexConverter.getCharPred(it.next(), unarySolver);
-                sb.append(predicate.toRaw());
                 while (it.hasNext()) {
                     CharPred temp = RegexConverter.getCharPred(it.next(), unarySolver);
-                    sb.append(temp.toRaw());
                     predicate = unarySolver.MkOr(predicate, temp);
                 }
             }
-            sb.append("]");
             predicate = unarySolver.MkNot(predicate);
             transitions.add(new SAFAInputMove<>(0, SAFA.getBooleanExpressionFactory().MkState(1), predicate));
             return SAFA.MkSAFA(transitions, boolExpr.MkState(0), Arrays.asList(1), new ArrayList<>(), unarySolver);
@@ -280,7 +269,7 @@ public class SAFAConstruction {
                 return SAFA.getEmptySAFA(unarySolver);
             }
             //now the repetition will be at least once
-            SAFA<CharPred, Character> tempSAFA = toSAFA(cphi.getMyRegex1(), unarySolver, delimiter, sb);
+            SAFA<CharPred, Character> tempSAFA = _toSAFA(cphi.getMyRegex1(), unarySolver);
             //make sure there is no empty SAFA when using SAFA.concatenate()
             outputSAFA = tempSAFA;
             // i starts from 1 because we already have one repetition above
@@ -318,30 +307,15 @@ public class SAFAConstruction {
         return outputSAFA;
     }
 
-    private static SAFA<CharPred, Character> shuffleInDelimiter(SAFA<CharPred, Character> safa,
-                                                                Character delimiter,
-                                                                UnaryCharIntervalSolver solver) throws TimeoutException {
-        BooleanExpressionFactory<PositiveBooleanExpression> boolExpr = SAFA.getBooleanExpressionFactory();
-        Collection<SAFAMove<CharPred, Character>> transitions = new LinkedList<>();
-        transitions.add(new SAFAInputMove<>(
-                0, boolExpr.MkState(1), new CharPred(delimiter))
-        );
-
-        SAFA<CharPred, Character> delimiterSAFA = SAFA.MkSAFA(
-                transitions, boolExpr.MkState(0), Arrays.asList(1), new ArrayList<>(), solver
-        );
-
-        return SAFA.shuffle(safa, delimiterSAFA, solver);
-    }
-
-    private static SAFA<CharPred, Character> manualShuffle(SAFA<CharPred, Character> safa,
-                                                           Character delimiter,
-                                                           UnaryCharIntervalSolver solver) {
-        int maxStateID = safa.getMaxStateId();
-
-
-
-        return null;
+    private static void addSelfLoops(SAFA<CharPred, Character> aut,
+                                     HashStringEncodingUnaryCharIntervalSolver solver) throws TimeoutException {
+        for (SAFAMove<CharPred, Character> sm : aut.getTransitions()) {
+            if (!(sm.to instanceof PositiveAnd)) {
+                CharPred cp = new CharPred(solver.getDelimiter());
+                SAFAInputMove<CharPred, Character> move = new SAFAInputMove<>(sm.from, pb.MkState(sm.from), cp);
+                aut.addTransition(move, solver, true);
+            }
+        }
     }
 
 }

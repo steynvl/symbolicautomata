@@ -106,13 +106,13 @@ public class TestSAFAToRegex {
 //        validateWords(pairs);
 
 
-//        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("(E(?=F)G)*");
-//        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("((a(?=bc)a)*)...");
-//        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("((?=aa)a(q(?=b)k)*)*a");
-        SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex("(?=a((?=b))*)*");
+//        SAFA<CharPred, Character> safa = TestUtils.constructFullMatchFromRegex("(E(?=F)G)*");
+//        SAFA<CharPred, Character> safa = TestUtils.constructFullMatchFromRegex("((a(?=bc)a)*)...");
+//        SAFA<CharPred, Character> safa = TestUtils.constructFullMatchFromRegex("((?=aa)a(q(?=b)k)*)*a");
+//        SAFA<CharPred, Character> safa = TestUtils.constructFullMatchFromRegex("(?=a((?=b))*)*");
 
-        System.out.println(safa.getDot("safa"));
-        System.out.println("regex = " + RegexConverter.toRegex(safa, solver));
+//        System.out.println(safa.getDot("safa"));
+//        System.out.println("regex = " + RegexConverter.toRegex(safa, solver));
     }
 
     @Test
@@ -134,10 +134,10 @@ public class TestSAFAToRegex {
 
     private void validateWords(List<Pair<String, String>> tests) throws TimeoutException {
         for (Pair<String, String> test : tests) {
-            SAFA<CharPred, Character> safa = Utils.constructFullMatchFromRegex(test.first);
-            String regex = RegexConverter.toRegex(safa, solver);
-            System.out.println("regex = " + regex);
-            assertEquals(test.second, regex);
+//            SAFA<CharPred, Character> safa = TestUtils.constructFullMatchFromRegex(test.first);
+//            String regex = RegexConverter.toRegex(safa, solver);
+//            System.out.println("regex = " + regex);
+//            assertEquals(test.second, regex);
         }
     }
 

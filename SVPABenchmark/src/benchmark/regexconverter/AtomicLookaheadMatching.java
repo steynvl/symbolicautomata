@@ -21,7 +21,7 @@ public class AtomicLookaheadMatching {
         RegexNode noLook = removeLookaheads(re.copy());
         RegexNode noAtomic = removeAtomicOperators(re.copy());
 
-//        Pair<SAFA<CharPred, Character>, HashEncodingUnaryCharIntervalSolver> p = RegexSubMatching.constructSubMatchingSAFA(noAtomic);
+//        Pair<SAFA<CharPred, Character>, HashStringEncodingUnaryCharIntervalSolver> p = RegexSubMatching.constructSubMatchingSAFA(noAtomic);
 //        char delimiter = p.second.getDelimiter();
 
         /* XXX
@@ -37,7 +37,7 @@ public class AtomicLookaheadMatching {
             if (Pattern.compile(sb.toString()).matcher(curr.first + curr.second).find()) {
                 filtered.add(curr);
             }
-//            if (p.first.accepts(Utils.lOfS(curr.first + delimiter + curr.second), p.second)) {
+//            if (p.first.accepts(TestUtils.lOfS(curr.first + delimiter + curr.second), p.second)) {
 //            filtered.add(curr);
 //            }
         }

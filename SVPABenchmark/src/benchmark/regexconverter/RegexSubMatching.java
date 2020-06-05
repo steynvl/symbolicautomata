@@ -1,6 +1,7 @@
 package benchmark.regexconverter;
 
 import RegexParser.*;
+import automata.AutomataException;
 import automata.safa.BooleanExpressionFactory;
 import automata.safa.SAFA;
 import automata.safa.SAFAInputMove;
@@ -9,7 +10,7 @@ import automata.safa.booleanexpression.PositiveBooleanExpression;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
-import theory.intervals.HashEncodingUnaryCharIntervalSolver;
+import theory.intervals.HashStringEncodingUnaryCharIntervalSolver;
 import theory.intervals.UnaryCharIntervalSolver;
 import utilities.Pair;
 
@@ -17,7 +18,7 @@ import java.util.*;
 
 public class RegexSubMatching {
 
-    private HashEncodingUnaryCharIntervalSolver solver;
+    private HashStringEncodingUnaryCharIntervalSolver solver;
 
     private Pair<Boolean, List<Character>> equivalency;
 
@@ -25,7 +26,7 @@ public class RegexSubMatching {
 
     private SAFA<CharPred, Character> safa1, safa2;
 
-    public RegexSubMatching(String regex1, String regex2) {
+    public RegexSubMatching(String regex1, String regex2) throws RegexTranslationException {
         this.regex1 = regex1;
         this.regex2 = regex2;
 
@@ -48,22 +49,24 @@ public class RegexSubMatching {
         return safa2;
     }
 
-    public HashEncodingUnaryCharIntervalSolver getSolver() {
+    public HashStringEncodingUnaryCharIntervalSolver getSolver() {
         return solver;
     }
 
-    public static Pair<SAFA<CharPred, Character>, HashEncodingUnaryCharIntervalSolver> constructSubMatchingSAFA(String regex) throws TimeoutException {
-        return constructSubMatchingSAFA(Utils.parseRegex(regex));
+    public static Pair<SAFA<CharPred, Character>, HashStringEncodingUnaryCharIntervalSolver> constructSubMatchingSAFA(String regex)
+            throws TimeoutException, AutomataException, RegexTranslationException {
+        return constructSubMatchingSAFA(TestUtils.parseRegex(regex));
     }
 
-    public static Pair<SAFA<CharPred, Character>, HashEncodingUnaryCharIntervalSolver> constructSubMatchingSAFA(RegexNode node) throws TimeoutException {
+    public static Pair<SAFA<CharPred, Character>, HashStringEncodingUnaryCharIntervalSolver> constructSubMatchingSAFA(RegexNode node)
+            throws TimeoutException, AutomataException, RegexTranslationException {
         Character delimiter = findDelimiterCandidate(node);
         delimiter = '#';
-        HashEncodingUnaryCharIntervalSolver solver = new HashEncodingUnaryCharIntervalSolver(delimiter);
+        HashStringEncodingUnaryCharIntervalSolver solver = new HashStringEncodingUnaryCharIntervalSolver(delimiter);
 
         RegexNode translated = RegexTranslator.translate(node);
 
-        SAFA<CharPred, Character> safa = RegexConverter.toSAFA(translated, solver, delimiter);
+        SAFA<CharPred, Character> safa = RegexConverter.toSAFA(translated, solver);
         safa = SAFA.concatenate(safa, buildRemainder(delimiter, solver), solver);
 
         return new Pair<>(safa, solver);
@@ -71,7 +74,7 @@ public class RegexSubMatching {
 
 
     private static SAFA<CharPred, Character> buildRemainder(Character delimiter,
-                                                            HashEncodingUnaryCharIntervalSolver solver) throws TimeoutException {
+                                                            HashStringEncodingUnaryCharIntervalSolver solver) throws TimeoutException {
         BooleanExpressionFactory<PositiveBooleanExpression> boolExpr = SAFA.getBooleanExpressionFactory();
         Collection<SAFAMove<CharPred, Character>> transitions = new LinkedList<>();
         transitions.add(new SAFAInputMove<>(0, boolExpr.MkState(1), new CharPred(delimiter)));
@@ -83,13 +86,13 @@ public class RegexSubMatching {
         return SAFA.concatenate(dem, SAFA.star(SAFA.dot(solver), solver), solver);
     }
 
-    private void testForEquivalence() {
-        RegexNode node1 = Utils.parseRegex(regex1);
-        RegexNode node2 = Utils.parseRegex(regex2);
+    private void testForEquivalence() throws RegexTranslationException {
+        RegexNode node1 = TestUtils.parseRegex(regex1);
+        RegexNode node2 = TestUtils.parseRegex(regex2);
         Character delimiter = findDelimiterCandidate(node1, node2);
 
         /* create custom solver to redefine dot symbol to not match explicit capturing brackets */
-        solver = new HashEncodingUnaryCharIntervalSolver(delimiter);
+        solver = new HashStringEncodingUnaryCharIntervalSolver(delimiter);
 
         RegexNode translated1 = RegexTranslator.translate(node1);
         RegexNode translated2 = RegexTranslator.translate(node2);
@@ -97,16 +100,16 @@ public class RegexSubMatching {
         try {
             SAFA<CharPred, Character> remainder = buildRemainder(delimiter, solver);
 
-            safa1 = RegexConverter.toSAFA(translated1, solver, delimiter);
+            safa1 = RegexConverter.toSAFA(translated1, solver);
             safa1 = SAFA.concatenate(safa1, remainder, solver);
 
-            safa2 = RegexConverter.toSAFA(translated2, solver, delimiter);
+            safa2 = RegexConverter.toSAFA(translated2, solver);
             safa2 = SAFA.concatenate(safa2, remainder, solver);
 
             equivalency = SAFA.isEquivalent(
                     safa1, safa2, new UnaryCharIntervalSolver(), SAFA.getBooleanExpressionFactory()
             );
-        } catch (TimeoutException e) {
+        } catch (TimeoutException | AutomataException e) {
             /* TODO */
         }
     }

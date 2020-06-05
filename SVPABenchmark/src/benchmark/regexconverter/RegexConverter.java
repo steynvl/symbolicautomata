@@ -2,12 +2,14 @@ package benchmark.regexconverter;
 
 
 import RegexParser.*;
+import automata.AutomataException;
 import automata.safa.*;
 import automata.sfa.SFA;
 import org.sat4j.specs.TimeoutException;
 
 import theory.characters.CharPred;
 import theory.characters.StdCharPred;
+import theory.intervals.HashStringEncodingUnaryCharIntervalSolver;
 import theory.intervals.UnaryCharIntervalSolver;
 
 public class RegexConverter {
@@ -17,25 +19,10 @@ public class RegexConverter {
         return SAFAToRegex.toRegex(safa, solver);
     }
 
-
-
     public static SAFA<CharPred, Character> toSAFA(FormulaNode phi,
-                                                   UnaryCharIntervalSolver unarySolver) throws TimeoutException {
-        return SAFAConstruction.toSAFA(phi, unarySolver, null, new StringBuilder());
-    }
-
-    public static SAFA<CharPred, Character> toSAFA(FormulaNode phi,
-                                                   UnaryCharIntervalSolver unarySolver,
-                                                   Character delimiter) throws TimeoutException {
-        return SAFAConstruction.toSAFA(phi, unarySolver, delimiter, new StringBuilder());
-    }
-
-    public static SAFA<CharPred, Character> toSAFA(FormulaNode phi,
-                                                   UnaryCharIntervalSolver unarySolver,
-                                                   Character delimiter,
-                                                   StringBuilder sb)
-            throws TimeoutException {
-        return SAFAConstruction.toSAFA(phi, unarySolver, delimiter, sb);
+                                                   HashStringEncodingUnaryCharIntervalSolver unarySolver)
+            throws TimeoutException, AutomataException {
+        return SAFAConstruction.toSAFA(phi, unarySolver);
     }
 
     public static SFA<CharPred, Character> toSFA(FormulaNode phi, UnaryCharIntervalSolver unarySolver)

@@ -7,17 +7,69 @@ import java.util.*;
 
 public class RegexTranslator {
 
-    public static RegexNode translate(RegexNode regexNode) {
+    public static RegexNode removeAtomicOperators(String atomicRegex) throws RegexTranslationException {
+        List<RegexNode> nodes = RegexParserProvider.parse(new String[]{ atomicRegex });
+        return removeAtomicOperators(nodes.get(0));
+    }
+
+    public static RegexNode removeAtomicOperators(RegexNode regexNode) throws RegexTranslationException {
+        if (regexNode instanceof UnionNode) {
+            UnionNode union = (UnionNode) regexNode;
+            return new UnionNode(removeAtomicOperators(union.getMyRegex1()), removeAtomicOperators(union.getMyRegex2()));
+        } else if (regexNode instanceof CharNode) {
+            return regexNode;
+        } else if (regexNode instanceof StarNode) {
+            StarNode star = (StarNode) regexNode;
+            return new StarNode(removeAtomicOperators(star.getMyRegex1()), star.quantifierType);
+        } else if (regexNode instanceof ConcatenationNode) {
+            ConcatenationNode concat = (ConcatenationNode) regexNode;
+            List<RegexNode> nodes = new LinkedList<>();
+            for (RegexNode rn : concat.getList()) {
+                if (rn instanceof AtomicGroupNode) {
+                    AtomicGroupNode agn = (AtomicGroupNode) rn;
+
+                    if (hasNestedAtomicGroups(agn)) {
+                        throw new RegexTranslationException("Nested atomic groups not supported.");
+                    }
+
+                    nodes.add(translate(agn.getMyRegex1()));
+                } else {
+                    nodes.add(removeAtomicOperators(rn));
+                }
+            }
+            return new ConcatenationNode(nodes);
+        } else if (regexNode instanceof PositiveLookaheadNode || regexNode instanceof NegativeLookaheadNode) {
+            return regexNode;
+        } else if (regexNode instanceof AtomicGroupNode) {
+            AtomicGroupNode atomicGroupNode = (AtomicGroupNode) regexNode;
+
+            if (hasNestedAtomicGroups(atomicGroupNode)) {
+                throw new RegexTranslationException("Nested atomic groups not supported.");
+            }
+
+            return translate(atomicGroupNode.getMyRegex1());
+        } else if (regexNode instanceof OptionalNode) {
+            OptionalNode optionalNode = (OptionalNode) regexNode;
+            return new OptionalNode(removeAtomicOperators(optionalNode.getMyRegex1()), optionalNode.quantifierType);
+        } else {
+            /* TODO handle instances and throw exception if was not any of them */
+            return regexNode;
+        }
+    }
+
+    public static RegexNode translate(RegexNode regexNode) throws RegexTranslationException {
         setParents(regexNode);
         return _translate(regexNode);
     }
 
-    private static RegexNode _translate(RegexNode regexNode) {
+    private static RegexNode _translate(RegexNode regexNode) throws RegexTranslationException {
         if (regexNode instanceof ConcatenationNode) {
             ConcatenationNode node = (ConcatenationNode) regexNode;
 
             List<RegexNode> nodes = new LinkedList<>();
-            node.getList().forEach(child -> nodes.add(_translate(child)));
+            for (RegexNode child : node.getList()) {
+                nodes.add(_translate(child));
+            }
             regexNode = new ConcatenationNode(nodes);
         } else if (regexNode instanceof UnionNode) {
             /* E|F */
@@ -209,15 +261,26 @@ public class RegexTranslator {
         }
     }
 
-    public static void setParents(RegexNode regexNode) {
+    private static boolean hasNestedAtomicGroups(RegexNode node) {
+        for (RegexNode n : node.children()) {
+            if (n instanceof AtomicGroupNode || hasNestedAtomicGroups(n)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static void setParents(RegexNode regexNode) throws RegexTranslationException {
         setParents(regexNode, null);
     }
 
-    private static void setParents(RegexNode child, RegexNode parent) {
+    private static void setParents(RegexNode child, RegexNode parent) throws RegexTranslationException {
         child.parent = parent;
         if (child instanceof AnchorNode) {
             AnchorNode node = (AnchorNode) child;
-//            setParents(node.getMyRegex1(), node);
+            /* TODO */
+            // setParents(node.getMyRegex1(), node);
         } else if (child instanceof AtomicGroupNode) {
             AtomicGroupNode node = (AtomicGroupNode) child;
             setParents(node.myRegex1, node);
@@ -225,7 +288,9 @@ public class RegexTranslator {
         } else if (child instanceof CharNode) {
         } else if (child instanceof ConcatenationNode) {
             ConcatenationNode node = (ConcatenationNode) child;
-            node.getList().forEach(c -> setParents(c, node));
+            for (RegexNode c : node.getList()) {
+                setParents(c, node);
+            }
         } else if (child instanceof IntervalNode) {
         } else if (child instanceof ModifierNode) {
             ModifierNode node = (ModifierNode) child;
@@ -254,10 +319,8 @@ public class RegexTranslator {
             setParents(node.getMyRegex1(), node);
             setParents(node.getMyRegex2(), node);
         } else {
-            System.err.println("Unsupported RegexNode child");
-            System.exit(-1);
+            throw new RegexTranslationException("Unsupported RegexNode child.");
         }
-
     }
 
 }

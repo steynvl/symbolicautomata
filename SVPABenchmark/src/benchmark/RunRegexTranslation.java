@@ -1,11 +1,9 @@
 package benchmark;
 
-import benchmark.regexconverter.Utils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
-import org.sat4j.specs.TimeoutException;
 
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -41,15 +39,15 @@ public class RunRegexTranslation {
             if (regex.pattern.length() > 100) continue;
 
             String translated;
-            try {
-                translated = Utils.translateRegex(regex.pattern);
-            } catch (NullPointerException | TimeoutException | UnsupportedOperationException e) {
-                System.out.printf("Could not parse %s (%s)\n", regex.pattern, e);
+//            try {
+//                translated = TestUtils.translateRegex(regex.pattern);
+//            } catch (NullPointerException | TimeoutException | UnsupportedOperationException e) {
+//                System.out.printf("Could not parse %s (%s)\n", regex.pattern, e);
 //                e.printStackTrace();
-                continue;
-            }
+//                continue;
+//            }
 
-            regex.translatedPattern = translated;
+//            regex.translatedPattern = translated;
             couldTranslate++;
         }
 
