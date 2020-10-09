@@ -1,8 +1,11 @@
-package benchmark.regexconverter;
+package benchmark.regexconverter.tests;
 
 import RegexParser.*;
 import automata.safa.SAFA;
 import benchmark.SAFAProvider;
+import benchmark.regexconverter.LookaheadWord;
+import benchmark.regexconverter.RegexTranslationException;
+import benchmark.regexconverter.RegexTranslator;
 import org.junit.Test;
 import theory.characters.CharPred;
 import utilities.Pair;

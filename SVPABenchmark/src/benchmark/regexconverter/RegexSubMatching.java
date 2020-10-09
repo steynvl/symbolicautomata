@@ -7,6 +7,7 @@ import automata.safa.SAFA;
 import automata.safa.SAFAInputMove;
 import automata.safa.SAFAMove;
 import automata.safa.booleanexpression.PositiveBooleanExpression;
+import benchmark.regexconverter.tests.TestUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
@@ -51,6 +52,10 @@ public class RegexSubMatching {
 
     public HashStringEncodingUnaryCharIntervalSolver getSolver() {
         return solver;
+    }
+
+    public Character getDelimiter() {
+        return solver.getDelimiter();
     }
 
     public static Pair<SAFA<CharPred, Character>, HashStringEncodingUnaryCharIntervalSolver> constructSubMatchingSAFA(String regex)

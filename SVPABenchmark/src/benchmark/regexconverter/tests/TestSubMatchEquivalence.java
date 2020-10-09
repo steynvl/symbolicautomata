@@ -1,8 +1,10 @@
-package benchmark.regexconverter;
+package benchmark.regexconverter.tests;
 
 import automata.safa.BooleanExpressionFactory;
 import automata.safa.SAFA;
 import automata.safa.booleanexpression.PositiveBooleanExpression;
+import benchmark.regexconverter.RegexSubMatching;
+import benchmark.regexconverter.RegexTranslationException;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
@@ -21,38 +23,35 @@ public class TestSubMatchEquivalence {
     private final UnaryCharIntervalSolver unarySolver = new UnaryCharIntervalSolver();
 
     @Test
-    public void testSubMatchEquivalence01() throws TimeoutException {
-//        RegexSubMatching rsm = new RegexSubMatching("a|aa", "aa|a");
-//        char delimiter = rsm.getSolver().getDelimiter();
+    public void testSubMatchEquivalence01() throws RegexTranslationException, TimeoutException {
+        RegexSubMatching rsm = new RegexSubMatching("a|aa", "aa|a");
+        char delimiter = rsm.getDelimiter();
 
-//        assertFalse(rsm.isEquivalent());
-//        testEquivalence(rsm, false, Arrays.asList(
-//                TestUtils.lOfS(String.format("a%ca", delimiter)), TestUtils.lOfS(String.format("aa%c", delimiter))
-//        ));
+        assertFalse(rsm.isEquivalent());
+        testEquivalence(rsm, false, Arrays.asList(
+                TestUtils.lOfS(String.format("a%ca", delimiter)), TestUtils.lOfS(String.format("aa%c", delimiter))
+        ));
     }
 
     @Test
-    public void testSubMatchEquivalence02() throws TimeoutException {
-//        RegexSubMatching rsm = new RegexSubMatching("a*(b|abb)", "a*(abb|b)");
+    public void testSubMatchEquivalence02() throws RegexTranslationException, TimeoutException {
+        RegexSubMatching rsm = new RegexSubMatching("a*(b|abb)", "a*(abb|b)");
 
-//        testEquivalence(rsm, true, Arrays.asList());
+        testEquivalence(rsm, true, Arrays.asList());
     }
 
     @Test
-    public void testSubMatchEquivalence03() throws TimeoutException {
-//        RegexSubMatching rsm = new RegexSubMatching("a*(ab)*b", "abb|a*(ab)*b");
-//        char delimiter = rsm.getSolver().getDelimiter();
+    public void testSubMatchEquivalence03() throws RegexTranslationException, TimeoutException {
+        RegexSubMatching rsm = new RegexSubMatching("a*(ab)*b", "abb|a*(ab)*b");
+        char delimiter = rsm.getDelimiter();
 
-//        testEquivalence(rsm, false, Arrays.asList(TestUtils.lOfS("abb" + delimiter)));
+        testEquivalence(rsm, false, Arrays.asList(TestUtils.lOfS("abb" + delimiter)));
     }
 
     @Test
-    public void testSubMatchEquivalence04() throws TimeoutException {
+    public void testSubMatchEquivalence04() throws RegexTranslationException, TimeoutException {
 //        RegexSubMatching rsm = new RegexSubMatching("b|(a|b)*b", "bb|(a|b)*b");
-
-//        SAFA<CharPred, Character> safa = new SAFAProvider("b|(a|b)*b").getSubMatchSAFA();
-
-//        System.out.println(safa.getDot("safa"));
+//        char delimiter = rsm.getDelimiter();
 
 //        testEquivalence(rsm, false, Arrays.asList(TestUtils.lOfS(String.format("b%cb", delimiter))));
     }

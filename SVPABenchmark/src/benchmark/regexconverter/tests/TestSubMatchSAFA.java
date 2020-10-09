@@ -1,7 +1,8 @@
-package benchmark.regexconverter;
+package benchmark.regexconverter.tests;
 
 import automata.AutomataException;
 import benchmark.SAFAProvider;
+import benchmark.regexconverter.LookaheadWord;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
 import utilities.Pair;

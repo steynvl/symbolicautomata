@@ -1,4 +1,4 @@
-package benchmark.regexconverter;
+package benchmark.regexconverter.tests;
 
 import static org.junit.Assert.*;
 

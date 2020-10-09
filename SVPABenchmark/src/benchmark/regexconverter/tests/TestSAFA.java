@@ -1,4 +1,4 @@
-package benchmark.regexconverter;
+package benchmark.regexconverter.tests;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;

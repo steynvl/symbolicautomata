@@ -1,7 +1,8 @@
-package benchmark.regexconverter;
+package benchmark.regexconverter.tests;
 
 import RegexParser.RegexNode;
 import RegexParser.RegexParserProvider;
+import benchmark.regexconverter.AtomicLookaheadMatching;
 import org.junit.Test;
 import org.sat4j.specs.TimeoutException;
 import utilities.Pair;

@@ -1,4 +1,4 @@
-package benchmark.regexconverter;
+package benchmark.regexconverter.tests;
 
 import automata.safa.SAFA;
 import org.junit.Test;

@@ -1,10 +1,11 @@
-package benchmark.regexconverter;
+package benchmark.regexconverter.tests;
 
 import RegexParser.RegexNode;
 import RegexParser.RegexParserProvider;
 import automata.AutomataException;
 import automata.safa.SAFA;
 import benchmark.SAFAProvider;
+import benchmark.regexconverter.LookaheadWord;
 import org.sat4j.specs.TimeoutException;
 import theory.characters.CharPred;
 import theory.intervals.HashStringEncodingUnaryCharIntervalSolver;
