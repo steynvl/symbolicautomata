@@ -4,39 +4,26 @@
  * Apr 21, 2015
  * @author Loris D'Antoni
  */
-package automata.safa;
-
-import java.util.Collections;
-import java.util.Objects;
+package automata.eps_safa;
 
 import org.sat4j.specs.TimeoutException;
-
-import automata.safa.booleanexpression.PositiveBooleanExpression;
 import theory.BooleanAlgebra;
+
+import java.util.Objects;
 
 /**
  * EpsSAFAInputMove
  * @param <P> set of predicates over the domain S
  * @param <S> domain of the automaton alphabet
  */
-public class SAFAInputMove<P,S> extends SAFAMove<P, S> {
+public class EpsSAFAInputMove<P,S> extends EpsSAFAMove<P, S> {
 
-	public SAFAInputMove(Integer from, PositiveBooleanExpression to, P guard) {
+	public EpsSAFAInputMove(Integer from, MoveType to, P guard) {
 		super(from, to);
-		toStates = to.getStates();
-		if (toStates.isEmpty()) {
-			maxState = -1;
-		} else {
-			maxState = Collections.max(toStates);
-		}
-		if (maxState < from) {
-			maxState = from;
-		}
-
 		this.guard = guard;
 	}
 
-	public SAFAInputMove(Integer from, PositiveBooleanExpression to, P guard, String regex) {
+	public EpsSAFAInputMove(Integer from, MoveType to, P guard, String regex) {
 		this(from, to, guard);
 		this.regex = regex;
 	}
@@ -59,26 +46,19 @@ public class SAFAInputMove<P,S> extends SAFAMove<P, S> {
 
 	@Override
 	public String toDotString() {
-		if (to.getStates().size() == 1) {
-			return String.format("%s -> %s [label=\"%s\"]\n", from, to, guard);
-		} else {
-			StringBuilder sb = new StringBuilder();
-			for (Integer to : to.getStates()) {
-				sb.append(String.format("%s -> %s [label=\"%s\"]\n", from, to, guard));
-			}
-			return sb.toString();
-		}
+		assert to.isExistentialMove();
+		return String.format("%s -> %s [label=\"%s\"]", from, to.toStates().first, guard);
 	}
 
 	@Override
 	public String toString() {
-		return String.format("S: %s --> %s [%s]", from, to, guard);
+		return String.format("S: %s --> %s [%s] [type=∃]", from, to.toStates().first, guard);
 	}
 
 	@Override
 	public boolean equals(Object other) {
-		if (other instanceof SAFAInputMove<?, ?>) {
-			SAFAInputMove<?, ?> otherCasted = (SAFAInputMove<?, ?>) other;
+		if (other instanceof EpsSAFAInputMove<?, ?>) {
+			EpsSAFAInputMove<?, ?> otherCasted = (EpsSAFAInputMove<?, ?>) other;
 			return otherCasted.from.equals(from) && otherCasted.to.equals(to) && otherCasted.guard.equals(guard);
 		}
 
@@ -91,7 +71,7 @@ public class SAFAInputMove<P,S> extends SAFAMove<P, S> {
 	}
 
 	@Override
-	public boolean isDisjointFrom(SAFAMove<P, S> t, BooleanAlgebra<P, S> ba) throws TimeoutException {
+	public boolean isDisjointFrom(EpsSAFAMove<P, S> t, BooleanAlgebra<P, S> ba) throws TimeoutException {
 		System.out.println("Method 'isDisjointFrom' not supported in class 'EpsSAFAInputMove'");
 		System.exit(-3);
 
@@ -100,7 +80,7 @@ public class SAFAInputMove<P,S> extends SAFAMove<P, S> {
 
 	@Override
 	public Object clone(){
-		return new SAFAInputMove<P, S>(from, to, guard, regex);
+		return new EpsSAFAInputMove<P, S>(from, to, guard, regex);
 	}
 
 	@Override

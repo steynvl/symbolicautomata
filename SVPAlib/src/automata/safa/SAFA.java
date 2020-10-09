@@ -456,8 +456,8 @@ public class SAFA<P, S> {
         PositiveBooleanExpression lookaheadInitial = pb.MkState(0);
         Collection<Integer> lookaheadFinal = new HashSet<>();
         lookaheadFinal.add(0);
-//        lookaheadTransitions.add(new SAFAInputMove<>(0, pb.MkState(1), ba.True()));
-//        lookaheadTransitions.add(new SAFAInputMove<>(0, pb.MkState(1), ba.True()));
+//        lookaheadTransitions.add(new EpsSAFAInputMove<>(0, pb.MkState(1), ba.True()));
+//        lookaheadTransitions.add(new EpsSAFAInputMove<>(0, pb.MkState(1), ba.True()));
 
         SAFA<A, B> aut = MkSAFA(lookaheadTransitions, lookaheadInitial, lookaheadFinal, new HashSet<>(), ba);
 
@@ -474,19 +474,6 @@ public class SAFA<P, S> {
         PositiveBooleanExpression to = SAFA.getBooleanExpressionFactory().MkState(1);
 
         transitions.add(new SAFAInputMove<>(0, to, booleanAlgebra.True()));
-        Collection<Integer> finalStates = new LinkedList<>();
-        finalStates.add(1);
-
-        return SAFA.MkSAFA(transitions, initial, finalStates, new HashSet<>(), booleanAlgebra);
-    }
-
-    public static <A, B> SAFA<A, B> customDot(BooleanAlgebra<A, B> booleanAlgebra, A alphabet) throws TimeoutException {
-        Collection<SAFAMove<A, B>> transitions = new LinkedList<>();
-
-        PositiveBooleanExpression initial = SAFA.getBooleanExpressionFactory().MkState(0);
-        PositiveBooleanExpression to = SAFA.getBooleanExpressionFactory().MkState(1);
-
-        transitions.add(new SAFAInputMove<>(0, to, alphabet));
         Collection<Integer> finalStates = new LinkedList<>();
         finalStates.add(1);
 
@@ -823,7 +810,7 @@ public class SAFA<P, S> {
     // moves.add(new Pair<P, Map<Integer, E>>(guard, new HashMap<>()));
     // for (Integer s : states) {
     // LinkedList<Pair<P, Map<Integer, E>>> moves2 = new LinkedList<>();
-    // for (SAFAInputMove<P, S> t : getInputMovesFrom(s)) {
+    // for (EpsSAFAInputMove<P, S> t : getInputMovesFrom(s)) {
     // for (Pair<P, Map<Integer, E>> move : moves) {
     // P newGuard = ba.MkAnd(t.guard, move.getFirst());
     // if (ba.IsSatisfiable(newGuard)) {
@@ -927,7 +914,7 @@ public class SAFA<P, S> {
 
                 for (Integer s : states) {
                     E succ = boolexpr.False();
-//                    for (SAFAInputMove<P, S> tr : aut.getInputMovesFrom(s)) {
+//                    for (EpsSAFAInputMove<P, S> tr : aut.getInputMovesFrom(s)) {
                     for (SAFAMove<P, S> tr : aut.getMovesFrom(s)) {
                         Timers.assertFullTO(timeout);
 
